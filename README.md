@@ -150,4 +150,4 @@ for the exact command sequence.
 ## Acceptance criteria
 
 See **`docs/ACCEPTANCE.md`** — all 17 criteria (A–Q) implemented and verified
-against the real test suite and routes.# auto-deploy test 1790179152
+against the real test suite and routes.
