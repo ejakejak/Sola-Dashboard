@@ -24,13 +24,13 @@ from flask import (
     redirect,
     render_template,
     request,
-    send_from_directory,
     url_for,
 )
 from werkzeug.utils import secure_filename
 
 from .auth import require_permission
 from .config import BASE_DIR
+from .mediastore import get_media_store
 
 
 def _storage():
@@ -183,7 +183,7 @@ def _board_column(stage, status):
     return "__other__"
 
 
-UPLOAD_DIR = BASE_DIR / "app" / "static" / "uploads"
+UPLOAD_DIR = BASE_DIR / "app" / "static" / "uploads"  # compatibility alias
 
 
 def _money(v):
@@ -760,11 +760,6 @@ def add_update(pid):
 # ---------------------------------------------------------------------------
 # PRODUCTION MEDIA (visibility-gated)
 # ---------------------------------------------------------------------------
-def _upload_dir():
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    return UPLOAD_DIR
-
-
 @PROD_BP.route("/<int:pid>/media", methods=["POST"])
 @require_permission("production.manage")
 def upload_media(pid):
@@ -784,8 +779,11 @@ def upload_media(pid):
     ftype = "video" if ext in (".mp4", ".mov", ".webm", ".avi", ".mkv") else "image"
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     stored = f"prod_{pid}_{stamp}_{fn}"
-    _upload_dir()
-    file.save(UPLOAD_DIR / stored)
+    try:
+        get_media_store().save(file, stored)
+    except OSError as e:
+        flash(f"Upload failed: media storage is not writable on this host ({e}).", "danger")
+        return redirect(url_for("production.detail", pid=pid))
     file_url = url_for("production.media_file", mid=0).rsplit("/0", 1)[0] + f"/{pid}_{stamp}_{fn}"
     rec = _table("production_media").insert({
         "production_id": pid,
@@ -811,8 +809,10 @@ def media_file(mid):
     # BACKEND gate: INTERNAL media requires the internal-read permission.
     if m["visibility"] == "INTERNAL" and not _has("production.media.internal.read"):
         abort(403)
-    _upload_dir()
-    return send_from_directory(UPLOAD_DIR, m["file_url"])
+    try:
+        return get_media_store().send(m["file_url"])
+    except (OSError, FileNotFoundError):
+        abort(404)
 
 
 # ---------------------------------------------------------------------------
