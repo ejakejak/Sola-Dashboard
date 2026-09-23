@@ -174,8 +174,10 @@ class SheetsStorage(Storage):
         self.missing = []
         if not self.spreadsheet_id:
             self.missing.append("SPREADSHEET_ID")
-        cred = self.credentials_path
-        if not cred or not os.path.exists(os.path.expanduser(cred)):
+        cred = (self.credentials_path or "").strip()
+        # Configured when we have a value AND it is either inline service-account
+        # JSON (serverless hosts have no file path) or a path that exists.
+        if not cred or not (cred.startswith("{") or os.path.exists(os.path.expanduser(cred))):
             self.missing.append("GOOGLE_APPLICATION_CREDENTIALS")
         # Lazy connection (built on first network use).
         self._client = None
@@ -204,8 +206,14 @@ class SheetsStorage(Storage):
                 "SheetsStorage not configured; missing: "
                 + (", ".join(self.missing) or "n/a"))
         import gspread  # lazy — sqlite path never imports gspread
+        import json as _json
 
-        gc = gspread.service_account(filename=self.credentials_path)
+        cred = (self.credentials_path or "").strip()
+        if cred.startswith("{"):
+            # Inline service-account JSON (serverless hosts have no file path).
+            gc = gspread.service_account_from_dict(_json.loads(cred))
+        else:
+            gc = gspread.service_account(filename=cred)
         sh = gc.open_by_key(self.spreadsheet_id)
         self._client = gc
         self._spreadsheet = sh
