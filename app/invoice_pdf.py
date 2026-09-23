@@ -1,18 +1,23 @@
 """Invoice PDF renderer — reportlab, A4 portrait, print-ready, customer-facing.
 
-Layout follows DESIGN_SPEC §4.8 with the real SOLA company block from
-app.config['COMPANY'] (name/address/phone) + KETERANGAN PEMBAYARAN bank note.
-NO NPWP is rendered anywhere. Only the brand logo uses the brand color; all
-other ink is status-neutral black on white. NEVER embeds HPP/margin/internal
-notes — only selling line items, prices, totals and payment terms.
+Layout follows DESIGN_SPEC §4.8 + NEO 2026-09-23 redesign: modern, minimal, whitespace-driven
+corporate invoice with hairline rules, tabular figures and a strict value/metadata hierarchy.
+The SOLA logo (white wordmark on Sola Gold #CCA300) is the mandatory brand anchor; all other
+ink is status-neutral near-black on white with muted-gray metadata. Brand tokens (DS §1.1):
+gold #CCA300, gold-dark #8A6D00 (estimated text-on-light derivative), text #0F172A,
+text-muted #64748B, border #E2E8F0, surface #FFFFFF / #FEFDFD.
 
 Renders to bytes so the caller (route or test) decides the destination.
+
+Changes here are VISUAL ONLY — no business logic, prices, totals, dates, status or data
+source are touched. NEVER embeds HPP/margin/internal notes — only selling line items,
+prices, totals and payment terms. NO NPWP rendered anywhere.
 """
 import io
 import os
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_LEFT, TA_RIGHT
+from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
@@ -26,7 +31,19 @@ from reportlab.platypus import (
     Spacer,
     Table,
     TableStyle,
+    KeepTogether,
 )
+
+# ---------------------------------------------------------------------------
+# Brand tokens (DESIGN_SPEC §1.1)
+# ---------------------------------------------------------------------------
+GOLD = colors.HexColor("#CCA300")           # brand gold — logo field, accent only
+GOLD_DARK = colors.HexColor("#8A6D00")      # estimated text-on-light derivative
+INK = colors.HexColor("#0F172A")            # primary text
+INK_MUTED = colors.HexColor("#64748B")      # labels / meta / footer
+RULE = colors.HexColor("#E2E8F0")           # hairline rules / borders
+SURFACE = colors.HexColor("#FFFFFF")
+ANTIQUE = colors.HexColor("#FEFDFD")        # payment panel fill / zebra
 
 # ---------------------------------------------------------------------------
 # Fonts — Arial TrueType so Unicode (Rp…, accented characters) renders.
@@ -95,6 +112,17 @@ def _fmt_date(value):
     return s
 
 
+def _xml(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _idr_qty(value):
+    v = float(value or 0)
+    if v == int(v):
+        return str(int(v))
+    return f"{v:g}"
+
+
 # ---------------------------------------------------------------------------
 # Main renderer
 # ---------------------------------------------------------------------------
@@ -157,26 +185,54 @@ def render_invoice_pdf(conn, invoice_id, company=None) -> bytes:
     paid = float(inv["amount_paid"] or 0)
     outstanding = float(inv["outstanding"] or 0)
 
-    styles = getSampleStyleSheet()
-    body = ParagraphStyle(
-        "body", parent=styles["BodyText"], fontName=F, fontSize=9.5, leading=13,
-        textColor=colors.black, alignment=TA_LEFT,
+    # ---- style kit (NEO: one family, no italics/serif; body >=9.5pt, labels >=8pt) ----
+    base = ParagraphStyle(
+        "base", parent=getSampleStyleSheet()["BodyText"], fontName=F,
+        textColor=INK, leading=14,
     )
-    small = ParagraphStyle(
-        "small", parent=body, fontSize=8.5, leading=11.5, textColor=colors.Color(0, 0, 0),
-    )
-    head = ParagraphStyle(
-        "head", parent=body, fontSize=13, leading=16, fontName=FB,
-    )
-    title = ParagraphStyle(
-        "title", parent=body, fontSize=20, leading=24, fontName=FB,
-    )
-    th = ParagraphStyle(
-        "th", parent=body, fontName=FB, fontSize=9, leading=12,
-    )
+    s_company = ParagraphStyle("company", parent=base, fontSize=12, leading=15, fontName=FB,
+                               textColor=INK)
+    s_addr = ParagraphStyle("addr", parent=base, fontSize=8.5, leading=12, textColor=INK_MUTED)
+    s_eyebrow = ParagraphStyle("eyebrow", parent=base, fontSize=15, leading=18, fontName=FB,
+                               textColor=GOLD, alignment=TA_RIGHT)
+    s_ref = ParagraphStyle("ref", parent=base, fontSize=20, leading=24, fontName=FB,
+                           textColor=INK, alignment=TA_RIGHT)
+    s_meta = ParagraphStyle("metaline", parent=base, fontSize=8.5, leading=12,
+                            textColor=INK_MUTED, alignment=TA_RIGHT)
+    s_section = ParagraphStyle("section", parent=base, fontSize=8.5, leading=12, fontName=FB,
+                               textColor=GOLD_DARK)
+    s_btoname = ParagraphStyle("btoname", parent=base, fontSize=15, leading=18, fontName=FB,
+                               textColor=INK)
+    s_btdetail = ParagraphStyle("btdetail", parent=base, fontSize=9.5, leading=14,
+                                textColor=INK_MUTED)
+    s_metakey = ParagraphStyle("metakey", parent=base, fontSize=8, leading=11, fontName=FB,
+                               textColor=INK_MUTED)
+    s_metaval = ParagraphStyle("metaval", parent=base, fontSize=10, leading=14, fontName=FB,
+                               textColor=INK, alignment=TA_RIGHT)
+    s_th = ParagraphStyle("th", parent=base, fontSize=8.5, leading=11, fontName=FB,
+                          textColor=INK_MUTED)
+    s_tcell = ParagraphStyle("tcell", parent=base, fontSize=9.5, leading=13, textColor=INK)
+    s_tnum = ParagraphStyle("tnum", parent=s_tcell, alignment=TA_RIGHT, textColor=INK)
+    s_sumkey = ParagraphStyle("sumkey", parent=base, fontSize=9.5, leading=13, textColor=INK_MUTED)
+    s_sumval = ParagraphStyle("sumval", parent=base, fontSize=9.5, leading=13,
+                              textColor=INK, alignment=TA_RIGHT)
+    s_grand = ParagraphStyle("grandlabel", parent=base, fontSize=12, leading=16, fontName=FB,
+                             textColor=INK)
+    s_grandval = ParagraphStyle("grandval", parent=base, fontSize=12.5, leading=16, fontName=FB,
+                                textColor=INK, alignment=TA_RIGHT)
+    s_outl = ParagraphStyle("outl", parent=base, fontSize=9.5, leading=13, fontName=FB,
+                            textColor=INK)
+    s_outv = ParagraphStyle("outv", parent=base, fontSize=10.5, leading=14, fontName=FB,
+                            textColor=GOLD_DARK, alignment=TA_RIGHT)
+    s_paynote = ParagraphStyle("paynote", parent=base, fontSize=10, leading=15, textColor=INK)
+    s_payinst = ParagraphStyle("payinst", parent=base, fontSize=8.5, leading=12,
+                               textColor=INK_MUTED)
+    s_footer = ParagraphStyle("footer", parent=base, fontSize=8, leading=11,
+                              textColor=INK_MUTED, alignment=TA_CENTER)
 
-    # ---- document with margins >= 12mm ----
+    # ---- document with margins = 14mm ----
     margin = 14 * mm
+    content_w = A4[0] - 2 * margin  # 182mm
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -191,84 +247,98 @@ def render_invoice_pdf(conn, invoice_id, company=None) -> bytes:
 
     story = []
 
-    # ---- 1. Company header + INVOICE title + ref ----
-    header = Table(
-        [[Image(logo_abs, width=58 * mm, height=30 * mm) if logo_ok else "", ""],
-         [Paragraph(cname, ParagraphStyle("cn", parent=head, fontSize=16))],
-         [Paragraph(caddress or "", small)],
-         [Paragraph(("Telp/WA: " + cphone) if cphone else "", small)]],
-        colWidths=[90 * mm, 80 * mm],
-    )
-    header.setStyle(TableStyle([
-        ("LEFTPADDING", (0, 0), (-1, -1), 0),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-        ("TOPPADDING", (0, 0), (-1, -1), 1),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+    # ---- 1. Masthead: logo + company (left) | INVOICE title + ref (right) ----
+    # Logo source is PORTRAIT 1080x1350 (aspect 0.8, gold field edge-to-edge): preserve
+    # its natural aspect in a 32x40mm display box so the wordmark stays crisp, not stretched.
+    logo_img = Image(logo_abs, width=32 * mm, height=40 * mm) if logo_ok else Paragraph(cname, s_company)
+    left_cell = [
+        logo_img,
+        Spacer(1, 4 * mm),
+        Paragraph(cname, s_company),
+        Spacer(1, 1 * mm),
+        Paragraph(_xml(caddress or ""), s_addr),
+        Paragraph(("Telp/WA " + cphone) if cphone else "", s_addr),
+    ]
+    meta_line = "Tanggal: " + _fmt_date(inv["invoice_date"])
+    if inv["due_date"]:
+        meta_line += " · Jatuh Tempo: " + _fmt_date(inv["due_date"])
+    right_cell = [
+        Paragraph("INVOICE", s_eyebrow),
+        Spacer(1, 2 * mm),
+        Paragraph(_xml(inv["invoice_number"]), s_ref),
+        Spacer(1, 6 * mm),
+        Paragraph(meta_line, s_meta),
+    ]
+    masthead = Table([[left_cell, right_cell]], colWidths=[100 * mm, 82 * mm])
+    masthead.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
-    story.append(header)
-    story.append(Spacer(1, 6 * mm))
-
-    ref_block = Table(
-        [[Paragraph("INVOICE", title)],
-         [Paragraph(f"No. {inv['invoice_number']}", ParagraphStyle("rn", parent=body, fontName=FB))],
-         [Paragraph(
-             f"Tanggal: {_fmt_date(inv['invoice_date'])}"
-             + (f"   Jatuh Tempo: {_fmt_date(inv['due_date'])}" if inv["due_date"] else ""),
-             small)]],
-        colWidths=[170 * mm],
-    )
-    ref_block.setStyle(TableStyle([
         ("LEFTPADDING", (0, 0), (-1, -1), 0),
         ("RIGHTPADDING", (0, 0), (-1, -1), 0),
         ("TOPPADDING", (0, 0), (-1, -1), 0),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
     ]))
-    story.append(ref_block)
-    story.append(Spacer(1, 8 * mm))
+    # gold masthead hairline (0.8pt #CCA300)
+    hairline = Table([[""]], colWidths=[content_w], rowHeights=[0.8])
+    hairline.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), GOLD),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    story.append(KeepTogether([masthead, Spacer(1, 6 * mm), hairline, Spacer(1, 6 * mm)]))
 
-    # ---- 2. Bill-to block ----
+    # ---- 2. Meta + Bill-To band (2-col, TOP aligned, no borders) ----
     bill_lines = []
     if cust is not None:
-        bill = (cust["name"] or "") + ((", " + cust["company_name"]) if cust["company_name"] else "")
-        bill_lines.append(bill)
+        btoname = (cust["name"] or "") + ((", " + cust["company_name"]) if cust["company_name"] else "")
         if cust["pic_name"]:
             bill_lines.append("Attn: " + cust["pic_name"])
         if cust["address"]:
             bill_lines.append(str(cust["address"]))
         if cust["phone"]:
             bill_lines.append("Telp: " + str(cust["phone"]))
-    bill_text = "<br/>".join(bill_lines) if bill_lines else "-"
-    bill_to = Table(
-        [[Paragraph("Kepada / Bill To", ParagraphStyle("bt", parent=body, fontName=FB))],
-         [Paragraph(bill_text, body)]],
-        colWidths=[80 * mm],
-    )
-    bill_to.setStyle(TableStyle([
+    else:
+        btoname = "-"
+    bill_cell = [Paragraph("BILL TO", s_section), Spacer(1, 3 * mm),
+                 Paragraph(_xml(btoname), s_btoname)]
+    for ln in bill_lines:
+        bill_cell.append(Paragraph(_xml(ln), s_btdetail))
+
+    meta_rows = [
+        [Paragraph("NO", s_metakey), Paragraph(_xml(inv["invoice_number"]), s_metaval)],
+        [Paragraph("TANGGAL", s_metakey), Paragraph(_fmt_date(inv["invoice_date"]), s_metaval)],
+    ]
+    if inv["due_date"]:
+        meta_rows.append([Paragraph("JATUH TEMPO", s_metakey), Paragraph(_fmt_date(inv["due_date"]), s_metaval)])
+    meta_table = Table(meta_rows, colWidths=[40 * mm, 58 * mm])
+    meta_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ("LEFTPADDING", (0, 0), (-1, -1), 0),
         ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-        ("TOPPADDING", (0, 0), (-1, -1), 1),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
-        ("BOX", (0, 0), (0, -1), 0.5, colors.Color(0.85, 0.85, 0.85)),
-        ("BACKGROUND", (0, 0), (0, 0), colors.Color(0.97, 0.97, 0.97)),
+        ("TOPPADDING", (0, 0), (-1, -1), 2),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
     ]))
-    story.append(bill_to)
-    story.append(Spacer(1, 6 * mm))
+    bill_band = Table([[bill_cell, meta_table]], colWidths=[84 * mm, 98 * mm])
+    bill_band.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    story.append(KeepTogether([bill_band, Spacer(1, 8 * mm)]))
 
-    # ---- 3. Line items table (qty | description | unit price | amount) ----
+    # ---- 3. Line items table (5 cols, no grid, header underline only) ----
     if not items:
         raise ValueError(f"invoice {invoice_id} has no line items")
 
-    tbl_style = ParagraphStyle("tbl", parent=body, fontSize=9, leading=12)
-    tcell = ParagraphStyle("tcell", parent=tbl_style, alignment=TA_LEFT)
-    tnum = ParagraphStyle("tnum", parent=tbl_style, alignment=TA_RIGHT, fontName=F)
-
     header_row = [
-        Paragraph("No", th),
-        Paragraph("Deskripsi", th),
-        Paragraph("Qty", th),
-        Paragraph("Harga Satuan", th),
-        Paragraph("Jumlah", th),
+        Paragraph("NO", s_th),
+        Paragraph("DESKRIPSI", s_th),
+        Paragraph("QTY", s_th),
+        Paragraph("HARGA SATUAN", s_th),
+        Paragraph("JUMLAH", s_th),
     ]
     rows = [header_row]
     for i, it in enumerate(items, start=1):
@@ -276,100 +346,84 @@ def render_invoice_pdf(conn, invoice_id, company=None) -> bytes:
         price = float(it["unit_price"] or 0)
         amount = float(it["subtotal"] or 0)
         desc = it["description"] or "-"
-        # ASCII-safe: Arial handles Rp + common punctuation; strip exotic glyphs.
-        safe_desc = desc.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        safe_desc = _xml(desc)
         rows.append([
-            Paragraph(str(i), tcell),
-            Paragraph(safe_desc, tcell),
-            Paragraph(_idr_qty(qty), tnum),
-            Paragraph(_idr(price), tnum),
-            Paragraph(_idr(amount), tnum),
+            Paragraph(str(i), s_tcell),
+            Paragraph(safe_desc, s_tcell),
+            Paragraph(_idr_qty(qty), s_tnum),
+            Paragraph(_idr(price), s_tnum),
+            Paragraph(_idr(amount), s_tnum),
         ])
-    tbl = Table(rows, colWidths=[12 * mm, 92 * mm, 16 * mm, 26 * mm, 24 * mm], repeatRows=1)
+    tbl = Table(rows, colWidths=[12 * mm, 74 * mm, 20 * mm, 38 * mm, 38 * mm], repeatRows=1)
     tbl.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.Color(0.93, 0.93, 0.93)),
-        ("GRID", (0, 0), (-1, -1), 0.4, colors.Color(0.85, 0.85, 0.85)),
+        # header underline (1pt #E2E8F0) only — no vertical/side grid
+        ("LINEBELOW", (0, 0), (-1, 0), 1, RULE),
+        # hairline under last body row (0.6pt #E2E8F0)
+        ("LINEBELOW", (0, -1), (-1, -1), 0.6, RULE),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("TOPPADDING", (0, 0), (-1, -1), 3),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, 0), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, 0), 5),
+        ("TOPPADDING", (0, 1), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 1), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("ALIGN", (0, 0), (0, -1), "LEFT"),
+        ("ALIGN", (1, 0), (1, -1), "LEFT"),
+        ("ALIGN", (2, 0), (-1, -1), "RIGHT"),
     ]))
     story.append(tbl)
-    story.append(Spacer(1, 5 * mm))
+    story.append(Spacer(1, 8 * mm))
 
-    # ---- 3b. Totals ----
+    # ---- 4. Summary block (right-aligned: label 58mm + value 34mm = 92mm) ----
     subtotal = float(inv["subtotal"] or 0)
     discount = float(inv["discount"] or 0)
     tax = float(inv["tax"] or 0)
-    total_rows = [
-        [Paragraph("Subtotal", small), Paragraph(_idr(subtotal), tnum)],
+    sum_rows = [
+        [Paragraph("Subtotal", s_sumkey), Paragraph(_idr(subtotal), s_sumval)],
     ]
     if discount:
-        total_rows.append([Paragraph("Diskon", small), Paragraph("- " + _idr(discount), tnum)])
+        sum_rows.append([Paragraph("Diskon", s_sumkey), Paragraph("- " + _idr(discount), s_sumval)])
     if tax:
-        total_rows.append([Paragraph("Pajak", small), Paragraph(_idr(tax), tnum)])
-    total_rows.append([Paragraph("Grand Total", ParagraphStyle("gt", parent=body, fontName=FB)),
-                       Paragraph(_idr(grand), ParagraphStyle("gtv", parent=tnum, fontName=FB))])
-    totals = Table(total_rows, colWidths=[60 * mm, 30 * mm])
-    totals.setStyle(TableStyle([
-        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+        sum_rows.append([Paragraph("Pajak", s_sumkey), Paragraph(_idr(tax), s_sumval)])
+    grand_row_idx = len(sum_rows)  # row immediately after subtotal/disc/tax = Grand Total
+    # gold rule above the Grand Total row, then dominant Grand Total
+    sum_rows.append([Paragraph("Grand Total", s_grand), Paragraph(_idr(grand), s_grandval)])
+    sum_rows.append([Paragraph("Jumlah Dibayar", s_sumkey), Paragraph(_idr(paid), s_sumval)])
+    sum_rows.append([Paragraph("Sisa Tagihan (Outstanding)", s_outl), Paragraph(_idr(outstanding), s_outv)])
+    summary = Table(sum_rows, colWidths=[58 * mm, 34 * mm], hAlign="RIGHT")
+    summary.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("LEFTPADDING", (0, 0), (-1, -1), 4),
         ("RIGHTPADDING", (0, 0), (-1, -1), 4),
         ("TOPPADDING", (0, 0), (-1, -1), 2),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-        ("LINEABOVE", (0, -1), (-1, -1), 1, colors.black),
+        # gold rule above the Grand Total row
+        ("LINEABOVE", (0, grand_row_idx), (-1, grand_row_idx), 1.2, GOLD),
     ]))
-    story.append(totals)
-    story.append(Spacer(1, 5 * mm))
+    story.append(KeepTogether([summary, Spacer(1, 10 * mm)]))
 
-    # ---- 4. Payment terms + outstanding ----
-    pay_in = Table([
-        [Paragraph("Jumlah Dibayar", small), Paragraph(_idr(paid), tnum)],
-        [Paragraph("Sisa Tagihan (Outstanding)", ParagraphStyle("os", parent=body, fontName=FB)),
-         Paragraph(_idr(outstanding), ParagraphStyle("osv", parent=tnum, fontName=FB))],
-    ], colWidths=[60 * mm, 30 * mm])
-    pay_in.setStyle(TableStyle([
-        ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-        ("TOPPADDING", (0, 0), (-1, -1), 2),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+    # ---- 5. Payment information panel (182mm box, fill #FEFDFD, pad 6mm) ----
+    pay_cell = [
+        Paragraph(_xml(pay_label), s_section),
+        Spacer(1, 3 * mm),
+        Paragraph(_xml(pay_note), s_paynote),
+        Spacer(1, 2 * mm),
+        Paragraph("Mohon transfer sesuai jumlah Sisa Tagihan di atas dan konfirmasi melalui kontak kami.", s_payinst),
+    ]
+    pay_panel = Table([[pay_cell]], colWidths=[content_w])
+    pay_panel.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 1, RULE),
+        ("BACKGROUND", (0, 0), (-1, -1), ANTIQUE),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6 * mm),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6 * mm),
+        ("TOPPADDING", (0, 0), (-1, -1), 6 * mm),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6 * mm),
     ]))
-    story.append(pay_in)
-    story.append(Spacer(1, 6 * mm))
+    story.append(KeepTogether([pay_panel, Spacer(1, 12 * mm)]))
 
-    pay_note_block = Table(
-        [[Paragraph(pay_label, ParagraphStyle("pn", parent=body, fontName=FB))],
-         [Paragraph(_xml(pay_note), body)],
-         [Paragraph("Mohon transfer sesuai jumlah Sisa Tagihan di atas dan konfirmasi melalui kontak kami.", small)]],
-        colWidths=[170 * mm],
-    )
-    pay_note_block.setStyle(TableStyle([
-        ("LEFTPADDING", (0, 0), (-1, -1), 0),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-        ("TOPPADDING", (0, 0), (-1, -1), 1),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
-        ("BOX", (0, 0), (0, -1), 0.5, colors.Color(0.85, 0.85, 0.85)),
-        ("BACKGROUND", (0, 0), (0, 0), colors.Color(0.97, 0.97, 0.97)),
-    ]))
-    story.append(pay_note_block)
-
-    # ---- 5. Footer ----
+    # ---- 6. Footer (centered muted one line) ----
     footer_note = company.get("footer_note", "Terima kasih atas kepercayaan Anda.")
-    story.append(Spacer(1, 10 * mm))
-    story.append(Paragraph(_xml(footer_note), small))
+    story.append(Paragraph(_xml(footer_note), s_footer))
 
     doc.build(story)
     return buf.getvalue()
-
-
-def _xml(s):
-    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-def _idr_qty(value):
-    v = float(value or 0)
-    if v == int(v):
-        return str(int(v))
-    return f"{v:g}"
