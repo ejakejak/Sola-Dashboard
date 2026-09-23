@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block crumb %}Master Data · {{ res.title }} · {{ 'New' if mode=='new' else 'Edit' }}{% endblock %}
+{% block title %}{{ res.title }} — {{ 'New' if mode=='new' else 'Edit' }} · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ 'New' if mode=='new' else 'Edit' }} {{ res.title.rstrip('s') | capitalize }}</h1>
+    <p>Grouped form (identity → status) with backend validation — all writes are audited.</p>
+  </div>
+</div>
+
+<div class="card form-card">
+  <div class="card-b">
+    <form method="post"
+          action="{{ url_for('master.create', key=res.key) if mode=='new' else url_for('master.update', key=res.key, rid=rid) }}">
+
+      <h2 style="margin:0 0 12px;font-size:var(--fs-lg)">1 · Details</h2>
+      <div class="form-grid">
+        {% for f in res.form_fields if f.name != 'status' %}
+        <div class="form-row">
+          <label for="{{ f.name }}">{{ f.label }}{% if f.required %}<span class="req"> *</span>{% endif %}</label>
+          {% if f.type == 'select' %}
+          <select id="{{ f.name }}" name="{{ f.name }}">
+            <option value=""></option>
+            {% if f.options %}
+              {% for o in f.options %}
+              <option value="{{ o }}" {{ 'selected' if form_values.get(f.name)==o }}>{{ o }}</option>
+              {% endfor %}
+            {% elif f.lookup %}
+              {% for ky, val in lookups.get(f.lookup, {}).items() %}
+              <option value="{{ ky }}" {{ 'selected' if form_values.get(f.name)|string == ky|string }}>{{ val }}</option>
+              {% endfor %}
+            {% endif %}
+          </select>
+          {% elif f.type == 'textarea' %}
+          <textarea id="{{ f.name }}" name="{{ f.name }}">{{ form_values.get(f.name) or '' }}</textarea>
+          {% elif f.type == 'number' %}
+          <input type="number" step="any" id="{{ f.name }}" name="{{ f.name }}" value="{{ form_values.get(f.name) or '' }}">
+          {% else %}
+          <input type="text" id="{{ f.name }}" name="{{ f.name }}" value="{{ form_values.get(f.name) or '' }}"
+                 {{ 'required' if f.required }}>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 style="margin:18px 0 12px;font-size:var(--fs-lg)">2 · Status</h2>
+      <div class="form-grid">
+        {% for f in res.form_fields if f.name == 'status' %}
+        <div class="form-row">
+          <label for="{{ f.name }}">{{ f.label }}</label>
+          <select id="{{ f.name }}" name="{{ f.name }}">
+            {% for o in f.options %}
+            <option value="{{ o }}" {{ 'selected' if form_values.get(f.name)==o }}>{{ o }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Save {{ res.title.rstrip('s') }}</button>
+        <a class="btn btn-secondary" href="{{ url_for('master.list_resource', key=res.key) }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

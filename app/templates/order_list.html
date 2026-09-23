@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block crumb %}Orders{% endblock %}
+{% block title %}Orders · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Sales Orders</h1>
+    <p>{{ rows|length }} order(s). Orders carry the approved-ordered pricing; an invoice is generated from an order.</p>
+  </div>
+  {% if can_create %}
+  <a class="btn btn-primary" href="{{ url_for('orders.create') }}">+ New Order</a>
+  {% endif %}
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search order / customer…">
+    <button class="btn btn-secondary" type="submit">Search</button>
+    {% if q %}<a class="btn btn-ghost" href="{{ url_for('orders.list') }}">Clear</a>{% endif %}
+  </form>
+</div>
+
+{% if rows %}
+<div class="card"><div class="card-b">
+  <table class="data">
+    <thead>
+      <tr><th>No.</th><th>Customer</th><th>Date</th><th>Deadline</th><th>Priority</th><th>Grand total</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="num">{{ r.order_number }}</td>
+        <td>{{ r.customer_name or '—' }}</td>
+        <td>{{ r.order_date }}</td>
+        <td>{{ r.deadline or '—' }}</td>
+        <td><span class="badge st-{{ r.priority|lower }}">{{ r.priority }}</span></td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(r.grand_total|default(0)|float).replace(',', '.') }}</td>
+        <td><span class="badge st-{{ r.status|lower }}">{{ r.status }}</span></td>
+        <td class="tright"><a class="btn btn-secondary" href="{{ url_for('orders.detail', oid=r.order_id) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% else %}
+<div class="card"><div class="card-b empty">
+  <div class="glyph">📦</div>
+  {% if q %}<p>No order matches “{{ q }}”.</p>
+  <div class="action"><a class="btn btn-ghost" href="{{ url_for('orders.list') }}">Clear filters</a></div>
+  {% else %}<p>No orders yet. Convert an approved quotation or create one directly.</p>
+  {% if can_create %}<div class="action"><a class="btn btn-primary" href="{{ url_for('orders.create') }}">Create first order</a></div>{% endif %}
+  {% endif %}
+</div></div>
+{% endif %}
+{% endblock %}

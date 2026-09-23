@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PRD-260922-001 · SOLA · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="">Dashboard</a>
+      
+      <a href="/quotations/" class="">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="">Invoices</a>
+      
+      
+      <a href="/production/" class="active">Production</a>
+      
+      
+      <a href="/production/templates" class="">Workflow Templates</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 6">Inventory</a>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Production · PRD-260922-001</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>PRD-260922-001
+      <span class="badge st-in_progress">in_progress</span>
+      <span class="badge st-normal" style="margin-left:6px">stage ORDER</span>
+    </h1>
+    <p>Live Smoke Customer · PT Live · Order ORD-2026-0001 · 12 pcs · due 2026-12-01</p>
+  </div>
+  
+  <a class="btn btn-secondary" href="/production/from-order">New production</a>
+  
+</div>
+
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  <!-- LEFT: timeline -->
+  <div class="card"><div class="card-h"><h2>Timeline</h2>
+    <span class="hint">template: Garment Default</span></div>
+  <div class="card-b">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1;height:8px;border-radius:99px;background:var(--border)">
+        <div style="height:8px;border-radius:99px;background:var(--warning);width:0.0%"></div>
+      </div>
+      <span style="font-size:var(--fs-sm);font-weight:600">0%</span>
+    </div>
+
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>1. ORDER</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/1/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>2. MATERIAL PREPARATION</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/2/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>3. CUTTING</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/3/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>4. SEWING</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/4/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>5. PRINTING</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/5/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>6. FINISHING</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/6/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>7. QC</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/7/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>8. PACKING</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/8/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+    <details class="stage-card"  style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge st-normal">pending</span>
+        <strong>9. COMPLETED</strong>
+        
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">0% · unassigned</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">—</span>
+          <span class="k">Target qty</span><span class="v">12</span>
+          <span class="k">Completed</span><span class="v">0</span>
+          <span class="k">Rejected</span><span class="v">0</span>
+          <span class="k">Started</span><span class="v">—</span>
+          <span class="k">Completed at</span><span class="v">—</span>
+          <span class="k">Notes</span><span class="v">—</span>
+        </div>
+        
+        <form method="post" action="/production/1/stage/9/advance" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              <option value="pending" selected>pending</option><option value="in_progress" >in_progress</option><option value="completed" >completed</option><option value="blocked" >blocked</option><option value="cancelled" >cancelled</option>
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="12.0"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value=""></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value=""></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        
+      </div>
+    </details>
+    
+  </div></div>
+
+  <!-- RIGHT: details & media -->
+  <div>
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Details</h2></div>
+    <div class="card-b">
+      <div class="kv" style="grid-template-columns:1fr 2fr">
+        <span class="k">Order</span><span class="v">ORD-2026-0001</span>
+        <span class="k">Customer</span><span class="v">Live Smoke Customer</span>
+        <span class="k">Quantity</span><span class="v">12</span>
+        <span class="k">Variant / product</span><span class="v">—</span>
+        <span class="k">Created</span><span class="v">2026-09-22 16:51:20</span>
+        <span class="k">Updated</span><span class="v">2026-09-22 16:51:20</span>
+      </div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Updates</h2></div>
+    <div class="card-b">
+      
+      <form method="post" action="/production/1/updates" class="form-grid">
+        <div class="form-row"><label>Progress %</label><input type="number" min="0" max="100" name="progress"></div>
+        <div class="form-row"><label>Qty completed</label><input type="number" step="any" name="quantity_completed"></div>
+        <div class="form-row"><label>Qty rejected</label><input type="number" step="any" name="quantity_rejected"></div>
+        <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+        <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Add update</button></div>
+      </form>
+      
+      <div class="empty" style="padding:12px">No updates yet.</div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Media</h2>
+      <span class="hint">INTERNAL shown only with internal-read permission</span></div>
+    <div class="card-b">
+      
+      <form method="post" action="/production/1/media" enctype="multipart/form-data" class="form-row">
+        <label>Upload file</label>
+        <input type="file" name="file" required>
+        <label>Visibility</label>
+        <select name="visibility">
+          <option value="CUSTOMER">👁 Customer-visible</option>
+          <option value="INTERNAL" selected>🔒 Internal only</option>
+        </select>
+        <button class="btn btn-primary" type="submit" style="margin-top:8px">Upload</button>
+      </form>
+      
+      <div class="empty" style="padding:12px">No media yet.</div>
+    </div></div>
+
+    <div class="card"><div class="card-h"><h2>Quality Control</h2></div>
+    <div class="card-b">
+      
+      <form method="post" action="/production/1/qc" class="form-grid">
+        <div class="form-row"><label>Result</label>
+          <select name="status">
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+            <option value="rework">Rework</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Passed qty</label><input type="number" step="any" name="passed_quantity"></div>
+        <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity"></div>
+        <div class="form-row"><label>Defect type</label><input type="text" name="defect_type"></div>
+        <div class="form-row"><label>Return to stage (rework)</label>
+          <select name="return_stage_id"><option value="">—</option>
+            <option value="1">ORDER</option><option value="2">MATERIAL PREPARATION</option><option value="3">CUTTING</option><option value="4">SEWING</option><option value="5">PRINTING</option><option value="6">FINISHING</option><option value="7">QC</option><option value="8">PACKING</option><option value="9">COMPLETED</option>
+          </select>
+        </div>
+        <div class="form-row" style="grid-column:1/-1"><label>Notes</label><textarea name="notes"></textarea></div>
+        <div class="form-row" style="grid-column:1/-1"><label>Evidence</label><input type="text" name="evidence"></div>
+        <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Record QC</button></div>
+      </form>
+      
+      <div class="empty" style="padding:12px">No QC recorded yet.</div>
+    </div></div>
+  </div>
+</div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

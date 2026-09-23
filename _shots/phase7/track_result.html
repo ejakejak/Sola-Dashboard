@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Track your order · Sola Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+  <style>
+    /* Public /track — mobile-first, single column, no admin chrome. */
+    body { display: flex; justify-content: center; padding: 4px 0 8px; }
+    .pwrap { max-width: 560px; padding: 24px 16px; }
+    .pwrap .logo { display: flex; align-items: center; gap: 10px; }
+    .pwrap .logo img { height: 40px; }
+    .pwrap .logo span { font-weight: 700; color: var(--text); }
+    .pwrap h1 { font-size: 26px; }
+    .pwrap .sub { font-size: var(--fs-sm); color: var(--text-muted); padding: 0 0 12px; }
+    .track-input input { min-height: 48px; font-size: 18px; letter-spacing: .5px;
+                         font-family: ui-monospace, monospace; text-transform: uppercase; }
+    .track-input .btn { min-height: 48px; font-size: 16px; width: 100%; }
+    .result-grid .kv { display: flex; width: 100%; }
+    .bar { flex: 1; height: 8px; border-radius: 99px; background: var(--border); }
+    .bar > i { display: block; height: 8px; border-radius: 99px; background:
+             var(--warning); }
+    .timeline .tl-row { display: flex; align-items: center; gap: 10px; padding: 9px 2px;
+                        border-bottom: 1px solid var(--border); }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+               gap: 10px; }
+    .gallery figure { border: 1px solid var(--border); border-radius: 8px; }
+    .gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: 7px; }
+    .gallery figcaption { font-size: 10px; color: var(--text-muted); text-align: center;
+                          padding: 3px 0; }
+    a.home { color: var(--brand); font-size: var(--fs-sm); }
+  </style>
+</head>
+<body>
+<div class="pwrap">
+  <div class="logo">
+    <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="Sola">
+    <span>Sola Konveksi</span>
+  </div>
+
+  <h1>Track your order</h1>
+  <p class="sub">Enter the production code printed on your invoice. Example: PRD-260922-001</p>
+
+  
+
+  <form method="post" class="form-row track-input">
+    <input type="text" name="code" value="PRD-260922-001" placeholder="PRD-XXXXXX-XXX"
+           minlength="6" required autofocus autocomplete="off">
+    <button class="btn btn-primary" type="submit">Track</button>
+  </form>
+
+  
+  <div class="card result-grid" style="padding-top:20px">
+    <div class="card-h"><h2>Production PRD-260922-001</h2></div>
+    <div class="card-b">
+      <div class="kv">
+        <span class="k">Product</span><span>—</span>
+      </div>
+      <div class="kv"><span class="k">Quantity</span><span>12 pcs</span></div>
+      <div class="kv"><span class="k">Order date</span><span>2026-09-22</span></div>
+      <div class="kv"><span class="k">Estimated completion</span>
+        <span>2026-12-01</span></div>
+      <div class="kv"><span class="k">Current stage</span>
+        <span class="badge st-in_progress">ORDER</span></div>
+
+      <div style="display:flex;align-items:center;gap:10px;padding-top:6px">
+        <div class="bar" style="flex:1"><i style="width:0.0%"></i></div>
+        <span style="font-size:var(--fs-sm);color:var(--text-muted)">0%</span>
+      </div>
+
+      <h3 style="padding:18px 0 6px">Progress</h3>
+      <div class="timeline">
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">1. ORDER</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">2. MATERIAL PREPARATION</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">3. CUTTING</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">4. SEWING</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">5. PRINTING</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">6. FINISHING</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">7. QC</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">8. PACKING</span>
+        </div>
+        
+        <div class="tl-row">
+          <span class="badge st-pending">pending</span>
+          <span style="flex:1">9. COMPLETED</span>
+        </div>
+        
+      </div>
+
+      
+
+      
+
+      
+    </div>
+  </div>
+  
+
+  <p style="padding-top:18px;font-size:var(--fs-sm)"><a class="home" href="/login">Staff sign in →</a></p>
+</div>
+</body>
+</html>

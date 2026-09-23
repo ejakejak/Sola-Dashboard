@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block crumb %}Dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Live overview — every number is computed from the database on this request.</p>
+  </div>
+  <div class="btn-group">
+    <a class="btn btn-secondary" href="/production/board">Production Board</a>
+  </div>
+</div>
+
+{# ---------- 6 KPI cards (DESIGN_SPEC §3.1) ---------- #}
+<div class="kpi-grid">
+  {% for k in kpis %}
+  <a class="kpi-card" href="{{ k.link }}" data-kpi="{{ k.key }}" data-value="{{ k.value }}">
+    <div class="kpi-icon" style="background:var(--{{ k.token }}--surface);color:var(--{{ k.token }})"></div>
+    <div class="kpi-body">
+      <div class="kpi-value" style="color:var(--{{ k.token }})">{{ k.value }}</div>
+      <div class="kpi-label">{{ k.label }}</div>
+      <div class="kpi-sub">{{ k.sub }}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="dash-cols">
+  {# ---------- Board snapshot (stage distribution bars, NOT a table) ---------- #}
+  <section class="card dash-card">
+    <div class="card-h"><h2>Production Board snapshot</h2>
+      <a class="btn btn-ghost" href="/production/board">Open Board →</a>
+    </div>
+    <div class="card-b">
+      {% set maxc = board_snapshot.values()|max or 1 %}
+      {% for st in board_stages %}
+      <div class="bar-row">
+        <span class="bar-label">{{ st }}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:{{ (board_snapshot[st]/maxc*100)|round if maxc else 0 }}%;background:var(--{{ column_token.get(st,'neutral') }})"></div>
+        </div>
+        <span class="bar-count {{ 'text-danger' if board_snapshot[st]==0 else '' }}">{{ board_snapshot[st] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ---------- Alerts stack (+ low stock / upcoming / unpaid) ---------- #}
+  <section class="card dash-card">
+    <div class="card-h"><h2>Alerts</h2></div>
+    <div class="card-b alert-stack">
+      <div class="alert-card alert-low" style="border-color:var(--danger-border)">
+        <div class="alert-title" style="color:var(--danger)">Low stock</div>
+        <div class="alert-body">
+          {% if low_stock %}
+          {{ low_stock|length }} tracked material(s) at/below threshold ({{ low_threshold|int }}).
+          <ul class="alert-ul">
+            {% for m in low_stock[:5] %}
+            <li><strong>{{ m.material_code }}</strong> {{ m.material_name }} — {{ m.available|int }} available</li>
+            {% endfor %}
+          </ul>
+          <a href="/inventory/?low=1">Open Inventory →</a>
+          {% else %}
+          <span class="muted-ok">No tracked materials are below the threshold.</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="alert-card alert-deadline" style="border-color:var(--warning-border)">
+        <div class="alert-title" style="color:var(--warning)">Upcoming deadlines</div>
+        <div class="alert-body">
+          {% if deadlines %}
+          <ul class="alert-ul">
+            {% for d in deadlines %}
+            <li><a href="/production/{{ d.production_id }}">{{ d.production_code }}</a>
+                <span class="muted-inline">due {{ d.deadline }} · {{ d.quantity|int }} pcs</span></li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <span class="muted-ok">No open productions have a deadline.</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="alert-card alert-unpaid" style="border-color:var(--danger-border)">
+        <div class="alert-title" style="color:var(--danger)">Unpaid invoices</div>
+        <div class="alert-body">
+          {% if unpaid.count %}
+          <strong>{{ unpaid.count }}</strong> invoice(s) owing <strong>Rp {{ money(unpaid.total) }}</strong>.
+          <a href="/invoices/">Review →</a>
+          {% else %}
+          <span class="muted-ok">No unpaid invoices.</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+{# ---------- Recent production updates feed (compact timeline) ---------- #}
+<section class="card dash-card" style="margin-top:20px">
+  <div class="card-h"><h2>Recent production updates</h2></div>
+  <div class="card-b feed">
+    {% if updates %}
+    <ul class="feed-ul">
+      {% for u in updates %}
+      <li class="feed-item">
+        <span class="feed-dot"></span>
+        <div>
+          <a href="/production/{{ u.production_id }}"><strong>{{ u.production_code }}</strong></a>
+          {% if u.stage_name %}<span class="badge st-in_progress">{{ u.stage_name }}</span>{% endif %}
+          {% if u.progress is not none %}<span class="feed-progress">{{ u.progress|int }}%</span>{% endif %}
+          <div class="feed-meta">{{ u.actor or 'staff' }} · {{ u.timestamp }}
+            {% if u.notes %}{{ u.notes }}{% endif %}</div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty"><div class="glyph">🗒️</div>No production updates yet.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

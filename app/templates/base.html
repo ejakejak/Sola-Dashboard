@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SOLA{% endblock %} · SOLA Konveksi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='assets/sola-logo-1.png') }}" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint=='index' }}">Dashboard</a>
+      {% if can('quotation.view') %}
+      <a href="{{ url_for('quotations.list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('quotations') }}">Quotations</a>
+      {% endif %}
+      {% if can('order.view') %}
+      <a href="{{ url_for('orders.list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('orders') }}">Orders</a>
+      {% endif %}
+      {% if can('invoice.view') %}
+      <a href="{{ url_for('invoices.list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('invoices') }}">Invoices</a>
+      {% endif %}
+      {% if can('production.view') %}
+      <a href="{{ url_for('production.list_productions') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('production') and request.endpoint != 'production.template_list' and request.endpoint != 'production.template_new' and request.endpoint != 'production.template_edit' }}">Production</a>
+      <a href="{{ url_for('production.board') }}" class="{{ 'active' if request.endpoint == 'production.board' }}">Board</a>
+      {% endif %}
+      {% if can('workflow.manage') %}
+      <a href="{{ url_for('production.template_list') }}" class="{{ 'active' if request.endpoint and request.endpoint in ('production.template_list','production.template_new','production.template_edit') }}">Workflow Templates</a>
+      {% endif %}
+      {% if can('masterdata.view') %}
+      <a href="{{ url_for('master.index') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('master') }}">Master Data</a>
+      {% endif %}
+      {% if can('inventory.view') %}
+      <a href="{{ url_for('inventory.list_inventory') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('inventory') }}">Inventory</a>
+      {% endif %}
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">{{ COMPANY.company_name }}</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">{% block crumb %}SOLA{% endblock %}</div>
+      <div class="user">
+        {% if current_username %}
+        <span>{{ current_username }}</span>
+        <span class="role-chip">{{ current_role_name or current_role_code }}</span>
+        <a class="btn btn-ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+        {% endif %}
+      </div>
+    </header>
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+          <div class="alert {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

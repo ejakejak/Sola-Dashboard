@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invoices · SOLA · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="">Dashboard</a>
+      
+      <a href="/quotations/" class="">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="active">Invoices</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 5">Production</a>
+      <a class="is-off" title="Not built yet — Phase 6">Inventory</a>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Invoices</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>Invoices</h1>
+    <p>1 invoice(s). Outstanding = grand total − amount paid (auto).</p>
+  </div>
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="" placeholder="Search invoice / order / customer…">
+    <select name="status">
+      <option value="">All statuses</option>
+      <option value="draft" >draft</option><option value="issued" >issued</option><option value="partially_paid" >partially_paid</option><option value="paid" >paid</option><option value="overdue" >overdue</option><option value="cancelled" >cancelled</option>
+    </select>
+    <button class="btn btn-secondary" type="submit">Filter</button>
+    
+  </form>
+</div>
+
+
+<div class="card"><div class="card-b">
+  <table class="data">
+    <thead>
+      <tr><th>No.</th><th>Customer</th><th>Order</th><th>Date</th><th>Due</th><th>Grand total</th><th>Paid</th><th>Outstanding</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td class="num">INV-2026-0001</td>
+        <td>Live Smoke Customer</td>
+        <td>ORD-2026-0001</td>
+        <td>2026-09-22</td>
+        <td>2026-10-06</td>
+        <td class="num-money">Rp 660.000</td>
+        <td class="num-money">Rp 660.000</td>
+        <td class="num-money ">Rp 0</td>
+        <td><span class="badge st-paid">paid</span></td>
+        <td class="tright">
+          <a class="btn btn-secondary" href="/invoices/1">View</a>
+          <a class="btn btn-ghost" href="/invoices/1/pdf" target="_blank">PDF</a>
+        </td>
+      </tr>
+      
+    </tbody>
+  </table>
+</div></div>
+
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

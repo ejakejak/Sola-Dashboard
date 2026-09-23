@@ -1,0 +1,31 @@
+# PHASE 5 DEV BRIEF — SOLA Production Management + Configurable Workflow [for @REX]
+
+You are Developer (REX) under EVA. Build Phase 5 of the SOLA dashboard in D:/Sola, ON the verified app (Phase 2 backbone+masterdata auth/audit; Phase 3-4 commercial loop already built+live-seeded). Reuse the existing generic `require_permission`/`audit()`/`get_db()` and the existing schema tables below — do NOT redo prior work, additive only.
+
+## Read first
+- `docs/DEV_BRIEF.md` — non-negotiables + phase order.
+- `docs/DESIGN_SPEC.md` — UI contract: screens 3 (Production Board) + 4 (Production Detail); Gold brand; status tokens; timeline/kanban guidance.
+- `db/schema.sql` — integrity contract. Tables ALREADY exist (reuse, no DDL unless documented-additive): `production_workflow_templates`, `production_workflow_template_steps`, `production_orders`, `production_stages`, `production_updates`, `production_media`, `quality_checks`, `users/roles/permissions/role_permissions`, `inventory` (inventory comes Phase 6 — do NOT build inventory now).
+- `docs/AUDIT_REPORT.md`, `docs/DATA_DICTIONARY.md`.
+- Full product spec: `C:/Users/muham/AppData/Local/hermes/cache/documents/…konveksi…txt` — §13 (production mgmt), §14 (configurable workflow), §15 (production stage), §16 (update + media), §17 (QC). §24 (roles), §27 (audit).
+
+## Important authorization working note
+- You run as a subagent on model `deepseek/deepseek-v4-flash-0731` (already pinned in delegation config) — that is intended and cheap; do NOT switch providers/build your own sandbox.
+- Interpreter to run/verify: `C:/Users/muham/AppData/Local/hermes/hermes-agent/venv/Scripts/python.exe`. App boot: `cd /d/Sola && PYTHONPATH=. <venv-python> run.py` → http://127.0.0.1:5000. Follow planning-with-files SOP.
+
+## Scope — implement and test phase-by-phase
+1. **Phase 3-4 regression suite (finish first):** add `tests/test_app_phase34.py` covering the whole commercial loop on the real app (quotation create→approve→convert (once)→order→invoice-from-order (no dupe)→payment→outstanding auto→PDF renders non-empty; a warehouse-blocked case for quotation.create?; audit row produced; price math). Use the app test client (create_app(test_config) with a temp DB path) OR the running app over requests — prefer the test client for determinism. Run it; make it green. (This hardens the already-built Phase 3-4 which currently lacks an automated suite.)
+2. **Workflow templates (configurable, spec §14):** seed default templates IDEMPOTENTLY: garment default `ORDER→MATERIAL PREPARATION→CUTTING→SEWING→PRINTING→FINISHING→QC→PACKING→COMPLETED`; a Mug short `ORDER→PRINTING→QC→PACKING→COMPLETED`; a Topi variant `ORDER→MATERIAL→CUTTING→SEWING→EMBROIDERY→QC→PACKING→COMPLETED`. Admin screens to list/create/edit a template and its ordered steps (sequence) — tag the final step `is_completion=1`. Do NOT hard-code the workflow in the production logic — production resolves its stages from the template (defaulting to the garment template).
+3. **Production from Order** (spec §13): create a production from an order (one production per order-item or order row), auto `production_code` PRD-YYMMDD-NNN (e.g. PRD-260922-001); snapshot product/qty/deadline/current_stage/status. Auto-materialize `production_stages` from the selected template on creation. Overall progress derived (stage completion-based, not manual).
+4. **Production detail** (spec §15/16): stages list (status pending/in_progress/completed/blocked/cancelled; assigned_user, assigned_vendor, start_at/completed_at, target/completed/rejected qty); advance a stage (set in_progress→completed with quantities); overall progress recomputed; **production updates** (progress, qty_completed, qty_rejected, notes, user, timestamp); **production media upload with visibility INTERNAL|CUSTOMER** (default the visibility control; INTERNAL media returned ONLY to roles with the internal-read permission — never to a customer surface; store upload to `app/static/uploads/` under gitignored path, record file_url/type/visibility). **QC** (spec §17): record pass/fail/rework + passed/rejected qty + defect_type + evidence; on fail with rework, move/allow the production back to a chosen earlier stage.
+5. **Permissions (spec §24, additive):** add permission codes (e.g. `production.view, production.manage, production.update, production.media.internal.read, qc.manage, workflow.manage`) to the seed idempotently (extend `seed/seed_auth.py` PERMISSIONS + ROLE_PERMISSION_MATRIX: ADMIN=all; PRODUCTION=view+update+manage+media.internal.read+workflow.manage?; keep management read-only as decided; QC=view+`qc.manage`; SALES/FINANCE=view). Remember ADMIN is granted every permission in the matrix — keep that invariant.
+6. **Pages per Design_Spec:** production list (+ simple board snapshot by current_stage is acceptable now; full kanban+dashboard analytics come Phase 8) and production detail (timeline, openable stages, media w/ visibility lock, QC actions). Cards/forms, not giant ungrouped tables. UI hides by `can(perm)` BUT backend enforces the same via `require_permission`.
+
+## Rules
+- **Never invent business data**; use migrated master + real order/customer references.
+- Audit every create/update/status/rework/media/QC write via `audit()`.
+- Media: `production_media.visibility` default 'INTERNAL'; the customer surface is NOT built yet, but never allow INTERNAL media to leak into any public/role-limited render.
+- Additive schema allowed ONLY if clearly documented in `db/` migration note (prefer reusing existing columns; the tables already carry the fields specified).
+- Run tests + live smoke after each sub-step with real data (use the seeded LEBUN customers / order INV-2026-0001 chain).
+
+## Report (English): per sub-step: files+routes+tests; verified behaviors (workflow templates seeded + editable; production from order with auto code+derived stages+progress; update; media upload w/ visibility + internal-read gating; QC pass/fail/rework), permission matrix updated, any schema changes + why, blockers (exact error). Distinguish implemented vs boundary-prepared. NEVER fabricate results — run the real code; on a hard blocker stop and report exactly.

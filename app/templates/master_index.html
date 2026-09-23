@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block crumb %}Master Data{% endblock %}
+{% block title %}Master Data{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Master Data</h1>
+    <p>Reference records — products, materials, processes, decorations, vendors, agents and customers.</p>
+  </div>
+</div>
+<div class="grid">
+  {% for r in resources %}
+  <div class="card">
+    <div class="card-b">
+      <h3 style="margin:0 0 6px">{{ r.title }}</h3>
+      <p style="margin:0 0 12px;color:var(--text-muted)" class="hint">{{ r.card_fields|length }} fields · {{ r.key }}</p>
+      <div style="display:flex;gap:8px">
+        <a class="btn btn-secondary" href="{{ url_for('master.list_resource', key=r.key) }}">View</a>
+        {% if can_create[r.key] %}
+        <a class="btn btn-primary" href="{{ url_for('master.create', key=r.key) }}">New</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

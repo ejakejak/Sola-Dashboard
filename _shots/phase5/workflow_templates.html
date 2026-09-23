@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Workflow Templates · SOLA · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="">Dashboard</a>
+      
+      <a href="/quotations/" class="">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="">Invoices</a>
+      
+      
+      <a href="/production/" class="">Production</a>
+      
+      
+      <a href="/production/templates" class="active">Workflow Templates</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 6">Inventory</a>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Workflow Templates</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>Workflow Templates</h1>
+    <p>Configurable production stage flows (spec §14). Production resolves its stages from a template — never a hard-coded workflow.</p>
+  </div>
+  
+  <a class="btn btn-primary" href="/production/templates/new">+ New template</a>
+  
+</div>
+
+<div class="grid">
+  
+  <div class="card rec-card">
+    <h3>Garment Default
+      <span class="badge st-approved" style="margin-left:6px">default</span>
+      
+    </h3>
+    <div class="kv">
+      <span class="k">Category</span><span class="v">— (catch-all)</span>
+      <span class="k">Steps</span><span class="v">9</span>
+    </div>
+    <a class="btn btn-secondary" href="/production/templates/1/edit">Edit template</a>
+  </div>
+  
+  <div class="card rec-card">
+    <h3>Mug Short
+      
+      
+    </h3>
+    <div class="kv">
+      <span class="k">Category</span><span class="v">Mug</span>
+      <span class="k">Steps</span><span class="v">5</span>
+    </div>
+    <a class="btn btn-secondary" href="/production/templates/2/edit">Edit template</a>
+  </div>
+  
+  <div class="card rec-card">
+    <h3>Topi Variant
+      
+      
+    </h3>
+    <div class="kv">
+      <span class="k">Category</span><span class="v">Topi</span>
+      <span class="k">Steps</span><span class="v">8</span>
+    </div>
+    <a class="btn btn-secondary" href="/production/templates/3/edit">Edit template</a>
+  </div>
+  
+</div>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

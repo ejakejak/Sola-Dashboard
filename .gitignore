@@ -1,0 +1,28 @@
+# env / secrets
+.env
+.env.local
+.env.*
+!.env.example
+secrets.toml
+
+# runtime data
+instance/
+*.db
+*.sqlite
+uploads/
+data/*.xlsx
+!data/.gitkeep
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# logs
+*.log
+migrations/migration_report.json
+
+# os
+.DS_Store
+Thumbs.db

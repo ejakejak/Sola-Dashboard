@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block crumb %}Inventory{% endblock %}
+{% block title %}Inventory · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Inventory &amp; Stock</h1>
+    <p>On-hand, reserved and available by material. Available = on-hand − reserved. Low stock when available ≤ {{ low_threshold }}.</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn btn-secondary" href="{{ url_for('inventory.movements') }}">Movements</a>
+    <a class="btn btn-secondary" href="{{ url_for('inventory.usage_log') }}">Usage Log</a>
+  </div>
+</div>
+
+<div class="grid" style="margin-bottom:16px">
+  <div class="card" style="padding:14px 20px">
+    <div style="font-size:var(--fs-micro);color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Total on-hand</div>
+    <div style="font-size:var(--fs-xl);font-weight:700;font-variant-numeric:tabular-nums">{{ "%.0f"|format(total_on_hand) }}</div>
+    <div class="hint" style="margin:0">across active materials</div>
+  </div>
+  <div class="card" style="padding:14px 20px">
+    <div style="font-size:var(--fs-micro);color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Reserved</div>
+    <div style="font-size:var(--fs-xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--info)">{{ "%.0f"|format(total_reserved) }}</div>
+    <div class="hint" style="margin:0">committed but not issued</div>
+  </div>
+  <div class="card" style="padding:14px 20px">
+    <div style="font-size:var(--fs-micro);color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Low stock</div>
+    <div style="font-size:var(--fs-xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--danger)">{{ low_count }}</div>
+    <div class="hint" style="margin:0">available ≤ {{ low_threshold }}</div>
+  </div>
+</div>
+
+<div class="list-quick-add">
+  <div style="display:flex;gap:8px">
+    <a class="btn {{ 'btn-primary' if not low_only else 'btn-secondary' }}" href="{{ url_for('inventory.list_inventory') }}">All</a>
+    <a class="btn {{ 'btn-primary' if low_only else 'btn-secondary' }}" href="{{ url_for('inventory.list_inventory', low=1) }}">Low stock ({{ low_count }})</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><h2>Materials</h2></div>
+  <div class="card-b" style="padding-top:8px">
+    {% if rows %}
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th class="tright">On hand</th>
+          <th class="tright">Reserved</th>
+          <th class="tright">Available</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>
+            <div style="font-weight:600">{{ r.material_name }}</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">{{ r.material_code }}</div>
+          </td>
+          <td class="tright num">{{ "%.0f"|format(r.on_hand) }} <span class="muted">{{ r.unit_name }}</span></td>
+          <td class="tright num">{{ "%.0f"|format(r.reserved) }}</td>
+          <td class="tright num" style="font-weight:700">{{ "%.0f"|format(r.available) }}</td>
+          <td>
+            {% if r.low %}
+            <span class="badge st-low">Low stock</span>
+            {% else %}
+            <span class="badge st-active">OK</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if can_manage %}
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="{{ r.material_id }}" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="{{ r.material_id }}" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="{{ r.material_id }}" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="{{ r.material_id }}" onclick="openModal('issue', this)">Issue</button>
+              {% if can_usage %}
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="{{ r.material_id }}" onclick="openModal('usage', this)">Usage</button>
+              {% endif %}
+            </span>
+            {% else %}
+            <span class="muted" style="font-size:var(--fs-xs)">read-only</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty"><div class="glyph">📦</div>No materials to show.
+      {% if low_only %}<div class="action"><a class="btn btn-ghost" href="{{ url_for('inventory.list_inventory') }}">Clear low-stock filter</a></div>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Action modal (drawer-style dialog) -->
+<div id="inv-modal" style="position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;z-index:50;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:12px;width:min(480px,94vw);max-height:90vh;overflow:auto;box-shadow:var(--shadow-hover)">
+    <div class="card-h" style="border-bottom:1px solid var(--border)">
+      <h2 id="inv-modal-title">Action</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="muted" id="inv-modal-mat" style="font-size:var(--fs-xs)"></span>
+        <button class="btn btn-ghost" style="height:32px;padding:0 8px" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <form id="inv-modal-form" method="post" style="padding:16px 20px">
+      <input type="hidden" name="material_id" id="f-material_id">
+      <!-- ADJUST -->
+      <div id="sec-adjust">
+        <div class="form-row">
+          <label>Delta <span class="req">*</span> <span class="muted" style="font-weight:400">(signed; e.g. +50 or −10)</span></label>
+          <input type="number" step="any" name="delta" required>
+        </div>
+        <div class="form-row"><label>Reason</label><input type="text" name="reason" placeholder="Stock take / correction…"></div>
+      </div>
+      <!-- RESERVE -->
+      <div id="sec-reserve" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Reference type</label>
+          <select name="reference_type"><option value="order">order</option><option value="order_item">order_item</option></select>
+        </div>
+        <div class="form-row"><label>Reference ID</label><input type="text" name="reference_id" placeholder="optional"></div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <!-- RELEASE -->
+      <div id="sec-release" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span> <span class="muted" style="font-weight:400">(deducts on-hand, clears reserved)</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <!-- ISSUE (OUT) -->
+      <div id="sec-issue" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span> <span class="muted" style="font-weight:400">(OUT deduction)</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Reference type</label>
+          <select name="reference_type"><option value="order_item">order_item</option><option value="order">order</option></select>
+        </div>
+        <div class="form-row"><label>Reference ID</label><input type="text" name="reference_id"></div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <!-- USAGE -->
+      <div id="sec-usage" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Production <span class="req">*</span></label>
+          <select name="production_id" class="production-select" required>
+            <option value="">— select production —</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <button class="btn btn-secondary" type="button" onclick="closeModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const ACTIONS = {
+  adjust:  { url: "{{ url_for('inventory.adjust') }}",  title: "Adjust on-hand (ADJUSTMENT)" },
+  reserve: { url: "{{ url_for('inventory.reserve') }}", title: "Reserve stock (RESERVED)" },
+  release: { url: "{{ url_for('inventory.release') }}", title: "Release / fulfill (RELEASED → OUT)" },
+  issue:   { url: "{{ url_for('inventory.issue') }}",   title: "Issue (OUT)" },
+  usage:   { url: "{{ url_for('inventory.material_usage') }}", title: "Record material usage" },
+};
+function openModal(action, btn) {
+  const cfg = ACTIONS[action];
+  document.getElementById('inv-modal-title').textContent = cfg.title;
+  document.getElementById('inv-modal-form').action = cfg.url;
+  document.getElementById('f-material_id').value = btn.dataset.mat;
+  document.getElementById('inv-modal-mat').textContent = btn.closest('tr') ? btn.closest('tr').querySelector('td .muted').textContent : '#' + btn.dataset.mat;
+  ['adjust','reserve','release','issue','usage'].forEach(k => {
+    document.getElementById('sec-' + k).style.display = (k === action ? '' : 'none');
+  });
+  document.getElementById('inv-modal').style.display = 'flex';
+  if (action === 'usage' && !document.querySelector('.production-select option[value]').value) {
+    fetch("{{ url_for('inventory.usage_productions') }}").then(r => r.json()).then(list => {
+      const sel = document.querySelector('.production-select');
+      sel.innerHTML = '<option value="">— select production —</option>' +
+        list.map(p => `<option value="${p.production_id}">${p.production_code} · ${p.customer_name || ''}</option>`).join('');
+    }).catch(() => {});
+  }
+}
+function closeModal() { document.getElementById('inv-modal').style.display = 'none'; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+{% endblock %}

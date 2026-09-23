@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Production · SOLA · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="">Dashboard</a>
+      
+      <a href="/quotations/" class="">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="">Invoices</a>
+      
+      
+      <a href="/production/" class="active">Production</a>
+      
+      
+      <a href="/production/templates" class="">Workflow Templates</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 6">Inventory</a>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Production</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>Production</h1>
+    <p>Production jobs from orders, resolved against configurable workflow templates. Derived overall progress per job.</p>
+  </div>
+  
+  <a class="btn btn-primary" href="/production/from-order">+ From Order</a>
+  
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="" placeholder="Search code / order / customer">
+    <button class="btn btn-secondary" type="submit">Search</button>
+    
+  </form>
+</div>
+
+
+<div class="grid">
+  
+  <a class="card rec-card" href="/production/1"
+     style="text-decoration:none;color:inherit;display:block">
+    <h3 style="font-family:ui-monospace,monospace;margin:0 0 4px">PRD-260922-001
+      <span class="badge st-in_progress">in_progress</span>
+    </h3>
+    <div class="kv">
+      <span class="k">Order</span><span class="v">ORD-2026-0001</span>
+      <span class="k">Customer</span><span class="v">Live Smoke Customer</span>
+      <span class="k">Qty</span><span class="v">12 pcs</span>
+      <span class="k">Current stage</span><span class="v">ORDER</span>
+      <span class="k">Deadline</span><span class="v">2026-12-01</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="flex:1;height:6px;border-radius:99px;background:var(--border)">
+        <div style="height:6px;border-radius:99px;background:var(--warning);width:0.0%"></div>
+      </div>
+      <span style="font-size:var(--fs-xs);color:var(--text-muted);white-space:nowrap">0%</span>
+    </div>
+  </a>
+  
+</div>
+
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

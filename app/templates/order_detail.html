@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block crumb %}Orders · {{ o.order_number }}{% endblock %}
+{% block title %}{{ o.order_number }} · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ o.order_number }} <span class="badge st-{{ o.status|lower }}">{{ o.status }}</span></h1>
+    <p>{{ o.customer_name or '—' }}{% if o.company_name %} · {{ o.company_name }}{% endif %} · {{ o.order_date }} · priority <span class="badge st-{{ o.priority|lower }}">{{ o.priority }}</span></p>
+  </div>
+  {% if c_invoice and o.status not in ['cancelled','pending'] and not invoices %}
+  <form method="post" action="{{ url_for('invoices.create_from_order', oid=o.order_id) }}">
+    <button class="btn btn-primary" type="submit">Generate Invoice</button>
+  </form>
+  {% elif invoices %}
+  <span class="hint">Invoice{% for inv in invoices %} <a href="{{ url_for('invoices.detail', iid=inv.invoice_id) }}">{{ inv.invoice_number }}</a>{% endfor %}</span>
+  {% endif %}
+</div>
+
+<div class="card"><div class="card-h">
+  <h2>Items</h2>
+  {% if quotation %}<span>from <a href="{{ url_for('quotations.detail', qid=quotation.quotation_id) }}">{{ quotation.quotation_number }}</a></span>{% else %}<span>direct</span>{% endif %}
+</div>
+<div class="card-b">
+  {% if items %}
+  <table class="data">
+    <thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit</th><th>Unit price</th><th>Subtotal</th></tr></thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td class="num">{{ loop.index }}</td>
+        <td>
+          {% if it.product_name %}{{ it.product_name }}{% endif %}{% if it.variant_name %} · {{ it.variant_name }}{% endif %}{% if it.material_name %} · {{ it.material_name }}{% endif %}
+          {% if it.color_name %}<div class="muted">Warna: {{ it.color_name }}</div>{% endif %}
+          {% if it.size_code %}<div class="muted">Ukuran: {{ it.size_code }}</div>{% endif %}
+          {% if it.decoration_name %}<div class="muted">Bordir/Sablon: {{ it.decoration_name }}{% if it.decoration_position %} ({{ it.decoration_position }}){% endif %}</div>{% endif %}
+          {% if it.notes %}<div class="muted">Catatan: {{ it.notes }}</div>{% endif %}
+        </td>
+        <td class="num">{{ it.quantity|int }}</td>
+        <td>{{ it.unit_code or '' }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(it.unit_price|default(0)|float).replace(',', '.') }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(it.subtotal|default(0)|float).replace(',', '.') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="totals">
+    <div><span>Subtotal</span><span class="num-money">Rp {{ "{:,.0f}".format(o.subtotal|default(0)|float).replace(',', '.') }}</span></div>
+    {% if o.discount %}<div><span>Discount</span><span class="num-money">− Rp {{ "{:,.0f}".format(o.discount|float).replace(',', '.') }}</span></div>{% endif %}
+    {% if o.tax %}<div><span>Tax</span><span class="num-money">Rp {{ "{:,.0f}".format(o.tax|float).replace(',', '.') }}</span></div>{% endif %}
+    <div class="grand"><span>Grand total</span><span class="num-money">Rp {{ "{:,.0f}".format(o.grand_total|default(0)|float).replace(',', '.') }}</span></div>
+  </div>
+  {% else %}<div class="empty">No line items.</div>{% endif %}
+</div></div>
+
+{% if o.deadline %}<div class="card"><div class="card-b"><strong>Deadline:</strong> {{ o.deadline }}</div></div>{% endif %}
+{% if o.notes %}<div class="card"><div class="card-b"><strong>Notes:</strong> {{ o.notes }}</div></div>{% endif %}
+{% endblock %}

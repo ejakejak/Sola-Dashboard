@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block crumb %}Production Board{% endblock %}
+{% block title %}Production Board · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Production Board</h1>
+    <p>9-stage workflow — drag-stage not enabled; click a card to open its detail. <strong data-total>{{ total }}</strong> job(s).</p>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-secondary" type="button" data-view-toggle>Compact table</button>
+    {% if can_manage %}
+    <a class="btn btn-primary" href="{{ url_for('production.from_order_form') }}">+ From Order</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="board-root" id="boardRoot">
+  {# ---------- KANBAN (primary view) ---------- #}
+  <div class="kanban-wrap">
+    <div class="kanban-scroll" data-view="kanban">
+      {% for col in board_columns %}
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--{{ column_token.get(col,'neutral') }})"></span>
+          <strong>{{ col }}</strong>
+          <span class="badge kb-count" style="color:var(--{{ column_token.get(col,'neutral') }})" data-col="{{ col }}">{{ columns[col]|length }}</span>
+        </div>
+        <div class="kb-col-body" data-col="{{ col }}" data-stage="{{ col }}">
+          {% for c in columns[col] %}
+          <a class="kb-card" href="{{ url_for('production.detail', pid=c.production_id) }}" data-code="{{ c.production_code }}" data-stage="{{ c.current_stage or c.status }}">
+            <div class="kb-top">
+              <span class="prio-dot {{ 'prio-high' if c.priority in ('high','urgent') else ('prio-medium' if c.priority=='medium' else '') }}" title="{{ c.priority }} priority"></span>
+              <span class="kb-status {{ 'st-completed' if c.status=='completed' else ('st-cancelled' if c.status=='cancelled' else ('st-partially_paid' if c.status=='blocked' else 'st-in_progress')) }}">{{ c.status }}</span>
+            </div>
+            <div class="kb-code">{{ c.production_code }}</div>
+            <div class="kb-meta">{{ c.customer_name or '—' }}{% if c.product_name %} · {{ c.product_name }}{% endif %}</div>
+            <div class="kb-qty">Qty: {{ c.quantity|int }} pcs</div>
+            <div class="kb-progress">
+              <div class="bar-track"><div class="bar-fill" style="width:{{ c.overall_progress|default(0)|int }}%;background:{{ 'var(--success)' if c.overall_progress|default(0)>=100 else 'var(--warning)' }}"></div></div>
+              <span>{{ c.overall_progress|default(0)|int }}% · {{ c.current_stage or c.status }}</span>
+            </div>
+            <div class="kb-foot {{ 'text-danger' if c.overdue else ('text-warning' if c.days_left is not none and c.days_left<=2 else '') }}">
+              {% if c.pic_name %}PIC: {{ c.pic_name }} · {% endif %}Due {{ c.deadline or c.order_deadline or '—' }}{% if c.days_left is not none %} ({{ c.days_left }}d){% endif %}
+            </div>
+          </a>
+          {% else %}
+          <div class="kb-empty">No jobs in {{ col }}.</div>
+          {% endfor %}
+        </div>
+        <div class="kb-col-foot">{{ columns[col]|length }} items</div>
+      </div>
+      {% endfor %}
+      {% if other %}
+      <div class="kb-col">
+        <div class="kb-col-head"><span class="status-dot" style="color:var(--text-muted)"></span><strong>Unassigned</strong>
+          <span class="badge kb-count">{{ other|length }}</span></div>
+        <div class="kb-col-body" data-stage="Unassigned">
+          {% for c in other %}
+          <a class="kb-card" href="{{ url_for('production.detail', pid=c.production_id) }}" data-code="{{ c.production_code }}" data-stage="{{ c.current_stage or c.status }}">
+            <div class="kb-top"><span class="kb-status st-normal">{{ c.status }}</span></div>
+            <div class="kb-code">{{ c.production_code }}</div>
+            <div class="kb-meta">{{ c.customer_name or '—' }}</div>
+            <div class="kb-qty">Qty: {{ c.quantity|int }} pcs</div>
+            <div class="kb-progress"><div class="bar-track"><div class="bar-fill" style="width:{{ c.overall_progress|default(0)|int }}%;background:var(--warning)"></div></div><span>{{ c.overall_progress|default(0)|int }}%</span></div>
+            <div class="kb-foot">due {{ c.deadline or c.order_deadline or '—' }}</div>
+          </a>
+          {% endfor %}
+        </div>
+        <div class="kb-col-foot">{{ other|length }} items</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------- COMPACT TABLE (alternative toggle for bulk review) ---------- #}
+  <div class="table-wrap" data-view="table" style="display:none">
+    <table class="data" id="boardTable">
+      <thead>
+        <tr>
+          <th>Code</th><th>Stage</th><th>Customer</th><th>Product</th><th>Qty</th>
+          <th>Progress</th><th>Priority</th><th>Status</th><th>PIC</th><th>Deadline</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in all_prods %}
+        <tr data-row-code="{{ r.production_code }}">
+          <td><a href="{{ url_for('production.detail', pid=r.production_id) }}">{{ r.production_code }}</a></td>
+          <td><span class="badge st-in_progress">{{ r.current_stage or '—' }}</span></td>
+          <td>{{ r.customer_name or '—' }}</td>
+          <td>{{ r.product_name or '—' }}</td>
+          <td class="num">{{ r.quantity|int }}</td>
+          <td class="num">{{ r.overall_progress|default(0)|int }}%</td>
+          <td>{{ r.priority }}</td>
+          <td><span class="badge {{ 'st-completed' if r.status=='completed' else ('st-cancelled' if r.status=='cancelled' else ('st-partially_paid' if r.status=='blocked' else 'st-in_progress')) }}">{{ r.status }}</span></td>
+          <td>{{ r.pic_name or '—' }}</td>
+          <td>{{ r.deadline or r.order_deadline or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var toggle = document.querySelector('[data-view-toggle]');
+  var wrap = document.getElementById('boardRoot');
+  if (!toggle || !wrap) return;
+  toggle.addEventListener('click', function () {
+    var kanban = wrap.querySelector('.kanban-wrap');
+    var table = wrap.querySelector('.table-wrap');
+    var isTable = table.style.display === 'table';
+    table.style.display = isTable ? 'none' : 'table';
+    if (kanban) kanban.style.display = isTable ? '' : 'none';
+    toggle.textContent = isTable ? 'Compact table' : 'Board view';
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block crumb %}Inventory · Usage{% endblock %}
+{% block title %}Material Usage · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Material Usage Log</h1>
+    <p>Materials consumed against productions — each triggers an OUT movement + on-hand deduction.</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a class="btn btn-secondary" href="{{ url_for('inventory.list_inventory') }}">← Inventory</a>
+    <a class="btn btn-secondary" href="{{ url_for('inventory.movements') }}">Movements</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><h2>Usage</h2></div>
+  <div class="card-b" style="padding-top:8px">
+    {% if rows %}
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th class="tright">Qty</th>
+          <th>Unit</th>
+          <th>Production</th>
+          <th>Used at</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>
+            <div style="font-weight:600">{{ r.material_name or '—' }}</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">{{ r.material_code or '—' }}</div>
+          </td>
+          <td class="tright num" style="font-weight:700">{{ r.quantity }}</td>
+          <td class="muted">{{ r.unit_name or '—' }}</td>
+          <td><a href="{{ url_for('production.detail', pid=r.production_id) }}" style="font-family:ui-monospace,monospace">{{ r.production_code or '—' }}</a></td>
+          <td class="muted">{{ r.used_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty"><div class="glyph">🧵</div>No material usage recorded.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

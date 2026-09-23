@@ -1,0 +1,8 @@
+# SOLA konveksi dashboard — dependencies
+Flask==3.1.1
+openpyxl==3.1.5
+reportlab>=4.2
+# Google Sheets live sync (scripts/sync_sheet.py) - the master sheet is the source of
+# truth for master data; gspread is a REAL runtime dependency of the sync tooling now.
+gspread==6.2.1
+google-auth>=2.0

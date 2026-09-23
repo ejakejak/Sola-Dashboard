@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block crumb %}Quotations · New{% endblock %}
+{% block title %}New Quotation · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>New Quotation</h1>
+    <p>Customer & line items (selling price from catalog). Created as draft — status is set from the detail page.</p>
+  </div>
+</div>
+
+<div class="card form-card">
+  <div class="card-b">
+    <form method="post">
+      <h2 style="margin:0 0 12px;font-size:var(--fs-lg)">1 · Customer & terms</h2>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Customer <span class="req">*</span></label>
+          <select name="customer_id" required>
+            <option value=""></option>
+            {% for c in customers %}
+            <option value="{{ c.customer_id }}" {{ 'selected' if form.get('customer_id')|string == c.customer_id|string }}>{{ c.name }}{% if c.company_name %} · {{ c.company_name }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Valid until</label>
+          <input type="date" name="valid_until" value="{{ form.get('valid_until') or '' }}">
+        </div>
+        <div class="form-row">
+          <label>Discount (Rp)</label>
+          <input type="number" step="any" min="0" name="discount" value="{{ form.get('discount') or '0' }}">
+        </div>
+        <div class="form-row">
+          <label>Tax (Rp)</label>
+          <input type="number" step="any" min="0" name="tax" value="{{ form.get('tax') or '0' }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Notes</label>
+        <textarea name="notes">{{ form.get('notes') or '' }}</textarea>
+      </div>
+
+      <h2 style="margin:18px 0 12px;font-size:var(--fs-lg)">2 · Line items</h2>
+      <div class="lineitems" id="lines">
+        <div class="li-head">
+          <span>Product</span><span>Material</span><span>Decoration</span><span>Qty</span><span>Unit</span><span>Unit price</span><span></span>
+        </div>
+        <div class="li-row">
+          <select name="item_product[]"><option value=""></option>{% for p in products %}<option value="{{ p.product_id }}">{{ p.product_name }}</option>{% endfor %}</select>
+          <select name="item_material[]"><option value=""></option>{% for m in materials %}<option value="{{ m.material_id }}" data-cat="{{ m.material_name }}">{{ m.material_name }}</option>{% endfor %}</select>
+          <select name="item_decoration[]"><option value=""></option>{% for d in decorations %}<option value="{{ d.decoration_id }}">{{ d.decoration_name }}</option>{% endfor %}</select>
+          <input type="number" step="any" min="1" name="item_qty[]" placeholder="qty">
+          <select name="item_unit[]"><option value=""></option>{% for u in units %}<option value="{{ u.unit_id }}">{{ u.unit_code }}</option>{% endfor %}</select>
+          <input type="number" step="any" min="0" name="item_price[]" placeholder="price (auto)">
+          <button type="button" class="btn btn-ghost" onclick="this.closest('.li-row').remove()">✕</button>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="addline">+ Add line</button>
+        <button class="btn btn-primary" type="submit">Save Quotation</button>
+        <a class="btn btn-secondary" href="{{ url_for('quotations.list') }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const lineTpl = document.getElementById('lines').children[1].innerHTML;
+function cloneLine(){ const d=document.createElement('div'); d.className='li-row'; d.innerHTML=lineTpl;
+  d.querySelector('button').onclick=function(){this.closest('.li-row').remove()}; document.getElementById('lines').appendChild(d); }
+document.getElementById('addline').onclick=cloneLine;
+</script>
+{% endblock %}

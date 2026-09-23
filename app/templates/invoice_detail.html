@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block crumb %}Invoices · {{ i.invoice_number }}{% endblock %}
+{% block title %}{{ i.invoice_number }} · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ i.invoice_number }} <span class="badge st-{{ i.status|lower }}">{{ i.status }}</span></h1>
+    <p>{{ i.customer_name or '—' }}{% if i.company_name %} · {{ i.company_name }}{% endif %} · {{ i.invoice_date }}{% if i.due_date %} · due {{ i.due_date }}{% endif %}</p>
+  </div>
+  <div class="form-actions">
+    <a class="btn btn-secondary" href="{{ url_for('invoices.pdf', iid=i.invoice_id) }}" target="_blank">🖨 Print PDF</a>
+    {% if c_update and i.status in ['draft'] %}
+    <form method="post" action="{{ url_for('invoices.set_status', iid=i.invoice_id) }}" style="display:contents">
+      <input type="hidden" name="status" value="issued">
+      <button class="btn btn-primary" type="submit">Issue invoice</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card"><div class="card-h"><h2>Line items</h2><span>from order</span></div>
+<div class="card-b">
+  {% if items %}
+  <table class="data">
+    <thead><tr><th>#</th><th>Description</th><th>Qty</th><th>Unit price</th><th>Amount</th></tr></thead>
+    <tbody>
+      {% for it in items %}
+      <tr>
+        <td class="num">{{ loop.index }}</td>
+        <td>{{ it.description }}</td>
+        <td class="num">{{ it.quantity|int }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(it.unit_price|default(0)|float).replace(',', '.') }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(it.subtotal|default(0)|float).replace(',', '.') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="totals">
+    <div><span>Subtotal</span><span class="num-money">Rp {{ "{:,.0f}".format(i.subtotal|default(0)|float).replace(',', '.') }}</span></div>
+    {% if i.discount %}<div><span>Discount</span><span class="num-money">− Rp {{ "{:,.0f}".format(i.discount|float).replace(',', '.') }}</span></div>{% endif %}
+    {% if i.tax %}<div><span>Tax</span><span class="num-money">Rp {{ "{:,.0f}".format(i.tax|float).replace(',', '.') }}</span></div>{% endif %}
+    <div class="grand"><span>Grand total</span><span class="num-money">Rp {{ "{:,.0f}".format(i.grand_total|default(0)|float).replace(',', '.') }}</span></div>
+    <div><span>Paid</span><span class="num-money">Rp {{ "{:,.0f}".format(i.amount_paid|default(0)|float).replace(',', '.') }}</span></div>
+    <div><span>Outstanding</span><span class="num-money {% if i.outstanding|default(0)|float > 0 %}owed{% endif %}">Rp {{ "{:,.0f}".format(i.outstanding|default(0)|float).replace(',', '.') }}</span></div>
+  </div>
+  {% else %}<div class="empty">No line items.</div>{% endif %}
+</div></div>
+
+{% if c_payment and i.status not in ['cancelled','paid','draft'] %}
+<div class="card"><div class="card-h"><h2>Record payment</h2></div><div class="card-b">
+  <form method="post" action="{{ url_for('invoices.add_payment', iid=i.invoice_id) }}" class="form-grid">
+    <div class="form-row"><label>Amount (Rp)</label><input type="number" step="any" min="0.01" name="amount" required></div>
+    <div class="form-row"><label>Method</label>
+      <select name="method">{% for m in methods %}<option value="{{ m }}">{{ m }}</option>{% endfor %}</select>
+    </div>
+    <div class="form-row"><label>Reference</label><input type="text" name="reference"></div>
+    <div class="form-row"><label>Payment date</label><input type="date" name="payment_date"></div>
+    <div class="form-row" style="grid-column:1/-1"><label>Notes</label><textarea name="notes"></textarea></div>
+    <div class="form-actions" style="grid-column:1/-1">
+      <button class="btn btn-primary" type="submit">Record payment</button>
+    </div>
+  </form>
+</div></div>
+{% endif %}
+
+{% if payments %}
+<div class="card"><div class="card-h"><h2>Payments ({{ payments|length }})</h2></div>
+<div class="card-b">
+  <table class="data">
+    <thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Reference</th><th>Notes</th><th>By</th></tr></thead>
+    <tbody>
+      {% for p in payments %}
+      <tr>
+        <td>{{ p.payment_date }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(p.amount|default(0)|float).replace(',', '.') }}</td>
+        <td>{{ p.method }}</td>
+        <td>{{ p.reference or '—' }}</td>
+        <td>{{ p.notes or '—' }}</td>
+        <td>{{ p.username or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endif %}
+{% endblock %}

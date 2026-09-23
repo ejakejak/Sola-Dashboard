@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block crumb %}Inventory · Movements{% endblock %}
+{% block title %}Stock Movements · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Stock Movements</h1>
+    <p>Every audited IN / OUT / ADJUSTMENT / RESERVED / RELEASED movement.</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a class="btn btn-secondary" href="{{ url_for('inventory.list_inventory') }}">← Inventory</a>
+    <a class="btn btn-secondary" href="{{ url_for('inventory.usage_log') }}">Usage Log</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><h2>Filter</h2></div>
+  <div class="card-b" style="padding-top:8px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <a class="btn {{ 'btn-primary' if not mtype else 'btn-secondary' }}" href="{{ url_for('inventory.movements') }}">All</a>
+      {% for t in movement_types %}
+      <a class="btn {{ 'btn-primary' if mtype==t else 'btn-secondary' }}" href="{{ url_for('inventory.movements', type=t) }}">{{ t }}</a>
+      {% endfor %}
+    </div>
+    <form method="get" style="display:flex;gap:8px;margin-top:12px;align-items:center">
+      {% if mtype %}<input type="hidden" name="type" value="{{ mtype }}">{% endif %}
+      <input type="text" name="q" value="{{ q }}" placeholder="Search material code / name / moved by"
+             style="height:32px;width:320px;border:1px solid var(--border);border-radius:8px;padding:0 10px">
+      <button class="btn btn-secondary" type="submit">Search</button>
+      {% if q %}<a class="btn btn-ghost" href="{{ url_for('inventory.movements', type=mtype) if mtype else url_for('inventory.movements') }}">Clear</a>{% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <div class="card-h"><h2>Movements</h2></div>
+  <div class="card-b" style="padding-top:8px">
+    {% if rows %}
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Material</th>
+          <th class="tright">Qty</th>
+          <th>Unit</th>
+          <th>Reference</th>
+          <th>Moved by</th>
+          <th>When</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>
+            <span class="badge
+              {{ 'st-completed' if r.movement_type=='IN' else
+                 ('st-partially_paid' if r.movement_type=='RESERVED' else
+                  ('st-low' if r.movement_type=='ADJUSTMENT' else
+                   ('st-cancelled' if r.movement_type=='OUT' else 'st-normal'))) }}">{{ r.movement_type }}</span>
+          </td>
+          <td>
+            <div style="font-weight:600">{{ r.material_name or '—' }}</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">{{ r.material_code or '—' }}</div>
+          </td>
+          <td class="tright num" style="font-weight:700">{{ r.quantity }}</td>
+          <td class="muted">{{ r.unit_name or '—' }}</td>
+          <td class="muted">{{ r.reference_type or '—' }}
+            {% if r.reference_id %}<span style="font-family:ui-monospace,monospace">#{{ r.reference_id }}</span>{% endif %}
+          </td>
+          <td class="muted">{{ r.username or '—' }}</td>
+          <td class="muted">{{ r.moved_at }}</td>
+          <td class="muted">{{ r.notes or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty"><div class="glyph">🔄</div>No movements record.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

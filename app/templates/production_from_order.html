@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block crumb %}Production · From Order{% endblock %}
+{% block title %}Create Production from Order · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Create Production from Order</h1>
+    <p>Select a confirmed order and a workflow template. One production is materialized per order line, with stages copied from the template.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('production.list_productions') }}">← Back to Production</a>
+</div>
+
+<div class="card form-card"><div class="card-b">
+  <form method="post" action="">
+    <div class="form-row">
+      <label>Order <span class="req">*</span></label>
+      <select name="order_id" required onchange="this.form.action='/production/from-order/'+this.value">
+        <option value="">Choose an order…</option>
+        {% for o in orders %}
+        <option value="{{ o.order_id }}">{{ o.order_number }} — {{ o.customer_name }} ({{ o.status }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Workflow template <span class="req">*</span></label>
+      <select name="template_id" required>
+        {% for t in templates %}
+        <option value="{{ t.workflow_template_id }}" {% if t.is_default %}selected{% endif %}>
+          {{ t.template_name }}{% if t.is_default %} (default){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <span class="hint">Stages are materialized from this template.</span>
+    </div>
+    <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Create production</button></div>
+  </form>
+</div></div>
+{% endblock %}

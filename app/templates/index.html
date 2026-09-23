@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block crumb %}Dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Welcome back{% if current_username %}, {{ current_username }}{% endif %}. Live KPI cards arrive in Phase 8 (DESIGN_SPEC §3.1).</p>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="card-b">
+      <div class="status-strip" style="background:var(--info)"></div>
+      <h3 style="margin:8px 0 4px">Active Orders</h3>
+      <p style="margin:0;color:var(--text-muted)" class="hint">KPI placeholder — Phase 3+</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-b">
+      <div class="status-strip" style="background:var(--warning)"></div>
+      <h3 style="margin:8px 0 4px">In Production</h3>
+      <p style="margin:0;color:var(--text-muted)" class="hint">KPI placeholder — Phase 5+</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-b">
+      <div class="status-strip" style="background:var(--success)"></div>
+      <h3 style="margin:8px 0 4px">Ready to Ship</h3>
+      <p style="margin:0;color:var(--text-muted)" class="hint">KPI placeholder — Phase 5+</p>
+    </div>
+  </div>
+</div>
+
+{% if can('masterdata.view') %}
+<div class="card" style="margin-top:20px">
+  <div class="card-h"><h2>Master Data</h2>
+    <a class="btn btn-primary" href="{{ url_for('master.index') }}">Open Master Data</a>
+  </div>
+  <div class="card-b">
+    <p style="margin:0;color:var(--text-muted)" class="hint">Materials, products, processes, decorations, vendors, agents and customers.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

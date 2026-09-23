@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block crumb %}Quotations{% endblock %}
+{% block title %}Quotations · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Quotations</h1>
+    <p>{{ rows|length }} quotation(s). Approved quotations convert once into a Sales Order.</p>
+  </div>
+  {% if can_create %}
+  <a class="btn btn-primary" href="{{ url_for('quotations.create') }}">+ New Quotation</a>
+  {% endif %}
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search number / customer…">
+    <button class="btn btn-secondary" type="submit">Search</button>
+    {% if q %}<a class="btn btn-ghost" href="{{ url_for('quotations.list') }}">Clear</a>{% endif %}
+  </form>
+</div>
+
+{% if rows %}
+<div class="card"><div class="card-b">
+  <table class="data">
+    <thead>
+      <tr><th>No.</th><th>Customer</th><th>Date</th><th>Valid until</th><th>Total</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="num">{{ r.quotation_number }}</td>
+        <td>{{ r.customer_name or '—' }}</td>
+        <td>{{ r.quotation_date }}</td>
+        <td>{{ r.valid_until or '—' }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(r.total|default(0)|float).replace(',', '.') }}</td>
+        <td><span class="badge st-{{ r.status|lower }}">{{ r.status }}</span></td>
+        <td class="tright"><a class="btn btn-secondary" href="{{ url_for('quotations.detail', qid=r.quotation_id) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% else %}
+<div class="card"><div class="card-b empty">
+  <div class="glyph">📄</div>
+  {% if q %}<p>No quotation matches “{{ q }}”.</p>
+  <div class="action"><a class="btn btn-ghost" href="{{ url_for('quotations.list') }}">Clear filters</a></div>
+  {% else %}<p>No quotations yet.</p>
+  {% if can_create %}<div class="action"><a class="btn btn-primary" href="{{ url_for('quotations.create') }}">Create first quotation</a></div>{% endif %}
+  {% endif %}
+</div></div>
+{% endif %}
+{% endblock %}

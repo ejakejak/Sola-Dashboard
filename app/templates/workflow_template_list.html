@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block crumb %}Workflow Templates{% endblock %}
+{% block title %}Workflow Templates · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Workflow Templates</h1>
+    <p>Configurable production stage flows (spec §14). Production resolves its stages from a template — never a hard-coded workflow.</p>
+  </div>
+  {% if can_manage %}
+  <a class="btn btn-primary" href="{{ url_for('production.template_new') }}">+ New template</a>
+  {% endif %}
+</div>
+
+<div class="grid">
+  {% for t in templates %}
+  <div class="card rec-card">
+    <h3>{{ t.template_name }}
+      {% if t.is_default %}<span class="badge st-approved" style="margin-left:6px">default</span>{% endif %}
+      {% if t.status != 'active' %}<span class="badge st-cancelled">{{ t.status }}</span>{% endif %}
+    </h3>
+    <div class="kv">
+      <span class="k">Category</span><span class="v">{{ t.category_name or '— (catch-all)' }}</span>
+      <span class="k">Steps</span><span class="v">{{ t.step_count }}</span>
+    </div>
+    <a class="btn btn-secondary" href="{{ url_for('production.template_edit', tid=t.workflow_template_id) }}">Edit template</a>
+  </div>
+  {% else %}
+  <div class="empty"><div class="glyph">⚙️</div>No workflow templates yet.<div class="action"><a class="btn btn-primary" href="{{ url_for('production.template_new') }}">Create first template</a></div></div>
+  {% endfor %}
+</div>
+{% endblock %}

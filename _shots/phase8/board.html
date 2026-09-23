@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Production Board · SOLA · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="">Dashboard</a>
+      
+      <a href="/quotations/" class="">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="">Invoices</a>
+      
+      
+      <a href="/production/" class="active">Production</a>
+      <a href="/production/board" class="active">Board</a>
+      
+      
+      <a href="/production/templates" class="">Workflow Templates</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+      
+      <a href="/inventory" class="">Inventory</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Production Board</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>Production Board</h1>
+    <p>9-stage workflow — drag-stage not enabled; click a card to open its detail. <strong data-total>1</strong> job(s).</p>
+  </div>
+  <div class="btn-group">
+    <button class="btn btn-secondary" type="button" data-view-toggle>Compact table</button>
+    
+    <a class="btn btn-primary" href="/production/from-order">+ From Order</a>
+    
+  </div>
+</div>
+
+<div class="board-root" id="boardRoot">
+  
+  <div class="kanban-wrap">
+    <div class="kanban-scroll" data-view="kanban">
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--neutral)"></span>
+          <strong>ORDER</strong>
+          <span class="badge kb-count" style="color:var(--neutral)" data-col="ORDER">1</span>
+        </div>
+        <div class="kb-col-body" data-col="ORDER" data-stage="ORDER">
+          
+          <a class="kb-card" href="/production/1" data-code="PRD-260922-001" data-stage="ORDER">
+            <div class="kb-top">
+              <span class="prio-dot prio-high" title="high priority"></span>
+              <span class="kb-status st-in_progress">in_progress</span>
+            </div>
+            <div class="kb-code">PRD-260922-001</div>
+            <div class="kb-meta">Live Smoke Customer</div>
+            <div class="kb-qty">Qty: 12 pcs</div>
+            <div class="kb-progress">
+              <div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--warning)"></div></div>
+              <span>0% · ORDER</span>
+            </div>
+            <div class="kb-foot ">
+              Due 2026-12-01 (69d)
+            </div>
+          </a>
+          
+        </div>
+        <div class="kb-col-foot">1 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--info)"></span>
+          <strong>MATERIAL PREPARATION</strong>
+          <span class="badge kb-count" style="color:var(--info)" data-col="MATERIAL PREPARATION">0</span>
+        </div>
+        <div class="kb-col-body" data-col="MATERIAL PREPARATION" data-stage="MATERIAL PREPARATION">
+          
+          <div class="kb-empty">No jobs in MATERIAL PREPARATION.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--info)"></span>
+          <strong>CUTTING</strong>
+          <span class="badge kb-count" style="color:var(--info)" data-col="CUTTING">0</span>
+        </div>
+        <div class="kb-col-body" data-col="CUTTING" data-stage="CUTTING">
+          
+          <div class="kb-empty">No jobs in CUTTING.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--warning)"></span>
+          <strong>SEWING</strong>
+          <span class="badge kb-count" style="color:var(--warning)" data-col="SEWING">0</span>
+        </div>
+        <div class="kb-col-body" data-col="SEWING" data-stage="SEWING">
+          
+          <div class="kb-empty">No jobs in SEWING.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--warning)"></span>
+          <strong>PRINTING</strong>
+          <span class="badge kb-count" style="color:var(--warning)" data-col="PRINTING">0</span>
+        </div>
+        <div class="kb-col-body" data-col="PRINTING" data-stage="PRINTING">
+          
+          <div class="kb-empty">No jobs in PRINTING.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--warning)"></span>
+          <strong>FINISHING</strong>
+          <span class="badge kb-count" style="color:var(--warning)" data-col="FINISHING">0</span>
+        </div>
+        <div class="kb-col-body" data-col="FINISHING" data-stage="FINISHING">
+          
+          <div class="kb-empty">No jobs in FINISHING.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--info)"></span>
+          <strong>QC</strong>
+          <span class="badge kb-count" style="color:var(--info)" data-col="QC">0</span>
+        </div>
+        <div class="kb-col-body" data-col="QC" data-stage="QC">
+          
+          <div class="kb-empty">No jobs in QC.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--warning)"></span>
+          <strong>PACKING</strong>
+          <span class="badge kb-count" style="color:var(--warning)" data-col="PACKING">0</span>
+        </div>
+        <div class="kb-col-body" data-col="PACKING" data-stage="PACKING">
+          
+          <div class="kb-empty">No jobs in PACKING.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      <div class="kb-col">
+        <div class="kb-col-head">
+          <span class="status-dot" style="color:var(--success)"></span>
+          <strong>COMPLETED</strong>
+          <span class="badge kb-count" style="color:var(--success)" data-col="COMPLETED">0</span>
+        </div>
+        <div class="kb-col-body" data-col="COMPLETED" data-stage="COMPLETED">
+          
+          <div class="kb-empty">No jobs in COMPLETED.</div>
+          
+        </div>
+        <div class="kb-col-foot">0 items</div>
+      </div>
+      
+      
+    </div>
+  </div>
+
+  
+  <div class="table-wrap" data-view="table" style="display:none">
+    <table class="data" id="boardTable">
+      <thead>
+        <tr>
+          <th>Code</th><th>Stage</th><th>Customer</th><th>Product</th><th>Qty</th>
+          <th>Progress</th><th>Priority</th><th>Status</th><th>PIC</th><th>Deadline</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr data-row-code="PRD-260922-001">
+          <td><a href="/production/1">PRD-260922-001</a></td>
+          <td><span class="badge st-in_progress">ORDER</span></td>
+          <td>Live Smoke Customer</td>
+          <td>—</td>
+          <td class="num">12</td>
+          <td class="num">0%</td>
+          <td>high</td>
+          <td><span class="badge st-in_progress">in_progress</span></td>
+          <td>—</td>
+          <td>2026-12-01</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+</div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  var toggle = document.querySelector('[data-view-toggle]');
+  var wrap = document.getElementById('boardRoot');
+  if (!toggle || !wrap) return;
+  toggle.addEventListener('click', function () {
+    var kanban = wrap.querySelector('.kanban-wrap');
+    var table = wrap.querySelector('.table-wrap');
+    var isTable = table.style.display === 'table';
+    table.style.display = isTable ? 'none' : 'table';
+    if (kanban) kanban.style.display = isTable ? '' : 'none';
+    toggle.textContent = isTable ? 'Compact table' : 'Board view';
+  });
+})();
+</script>
+
+</body>
+</html>

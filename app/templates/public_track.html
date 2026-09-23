@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Track your order · Sola Konveksi</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <style>
+    /* Public /track — mobile-first, single column, no admin chrome. */
+    body { display: flex; justify-content: center; padding: 4px 0 8px; }
+    .pwrap { max-width: 560px; padding: 24px 16px; }
+    .pwrap .logo { display: flex; align-items: center; gap: 10px; }
+    .pwrap .logo img { height: 40px; }
+    .pwrap .logo span { font-weight: 700; color: var(--text); }
+    .pwrap h1 { font-size: 26px; }
+    .pwrap .sub { font-size: var(--fs-sm); color: var(--text-muted); padding: 0 0 12px; }
+    .track-input input { min-height: 48px; font-size: 18px; letter-spacing: .5px;
+                         font-family: ui-monospace, monospace; text-transform: uppercase; }
+    .track-input .btn { min-height: 48px; font-size: 16px; width: 100%; }
+    .result-grid .kv { display: flex; width: 100%; }
+    .bar { flex: 1; height: 8px; border-radius: 99px; background: var(--border); }
+    .bar > i { display: block; height: 8px; border-radius: 99px; background:
+             {{ 'var(--success)' if data and data.overall_progress >= 100 else 'var(--warning)' }}; }
+    .timeline .tl-row { display: flex; align-items: center; gap: 10px; padding: 9px 2px;
+                        border-bottom: 1px solid var(--border); }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+               gap: 10px; }
+    .gallery figure { border: 1px solid var(--border); border-radius: 8px; }
+    .gallery img { width: 100%; height: 110px; object-fit: cover; border-radius: 7px; }
+    .gallery figcaption { font-size: 10px; color: var(--text-muted); text-align: center;
+                          padding: 3px 0; }
+    a.home { color: var(--brand); font-size: var(--fs-sm); }
+  </style>
+</head>
+<body>
+<div class="pwrap">
+  <div class="logo">
+    <img src="{{ url_for('static', filename='assets/sola-logo-1.png') }}" alt="Sola">
+    <span>Sola Konveksi</span>
+  </div>
+
+  <h1>Track your order</h1>
+  <p class="sub">Enter the production code printed on your invoice. Example: PRD-260922-001</p>
+
+  {% if message %}<div class="alert {{ alert_type }}">{{ message }}</div>{% endif %}
+
+  <form method="post" class="form-row track-input">
+    <input type="text" name="code" value="{{ code or '' }}" placeholder="PRD-XXXXXX-XXX"
+           minlength="6" required autofocus autocomplete="off">
+    <button class="btn btn-primary" type="submit">Track</button>
+  </form>
+
+  {% if data %}
+  <div class="card result-grid" style="padding-top:20px">
+    <div class="card-h"><h2>Production {{ data.production_code }}</h2></div>
+    <div class="card-b">
+      <div class="kv">
+        <span class="k">Product</span><span>{{ data.product_name or '—' }}{% if data.variant_name %} · {{ data.variant_name }}{% endif %}</span>
+      </div>
+      <div class="kv"><span class="k">Quantity</span><span>{{ data.quantity|int }} pcs</span></div>
+      <div class="kv"><span class="k">Order date</span><span>{{ data.order_date or '—' }}</span></div>
+      <div class="kv"><span class="k">Estimated completion</span>
+        <span>{{ data.order_deadline or data.deadline or '—' }}</span></div>
+      <div class="kv"><span class="k">Current stage</span>
+        <span class="badge {{ prod_badge_class(data.status) }}">{{ data.current_stage or '—' }}</span></div>
+
+      <div style="display:flex;align-items:center;gap:10px;padding-top:6px">
+        <div class="bar" style="flex:1"><i style="width:{{ data.overall_progress|default(0) }}%"></i></div>
+        <span style="font-size:var(--fs-sm);color:var(--text-muted)">{{ data.overall_progress|default(0)|int }}%</span>
+      </div>
+
+      <h3 style="padding:18px 0 6px">Progress</h3>
+      <div class="timeline">
+        {% for s in data.stages %}
+        <div class="tl-row">
+          <span class="badge {{ prod_badge_class(s.status) }}">{{ s.status }}</span>
+          <span style="flex:1">{{ loop.index }}. {{ s.stage_name }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if data.latest_update %}
+      <h3 style="padding:16px 0 6px">Latest update</h3>
+      {% if data.latest_update.notes %}
+      <p style="padding:0 0 4px">{{ data.latest_update.notes }}</p>
+      {% endif %}
+      {% if data.latest_update.progress is not none %}
+      <p class="sub">Progress reported: {{ data.latest_update.progress|int }}%</p>
+      {% endif %}
+      <p class="sub">{{ data.latest_update.timestamp }}</p>
+      {% endif %}
+
+      {% if data.media %}
+      <h3 style="padding:16px 0 6px">Photos</h3>
+      <div class="gallery">
+        {% for m in data.media %}
+        <figure>
+          <img src="{{ url_for('track.public_media', code=data.production_code, filename=m.file_url) }}"
+               alt="Production photo" loading="lazy">
+          <figcaption>{{ m.file_type }}</figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if data.notes %}
+      <h3 style="padding:16px 0 6px">Important notes</h3>
+      <p style="padding:0">{{ data.notes }}</p>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="border-style:dashed">
+    <p style="padding:0;font-size:var(--fs-sm);color:var(--text-muted)">Code not found?
+      Check with your sales contact.</p>
+  </div>
+  {% endif %}
+
+  <p style="padding-top:18px;font-size:var(--fs-sm)"><a class="home" href="{{ url_for('auth.login') }}">Staff sign in →</a></p>
+</div>
+</body>
+</html>

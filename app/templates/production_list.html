@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block crumb %}Production{% endblock %}
+{% block title %}Production · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Production</h1>
+    <p>Production jobs from orders, resolved against configurable workflow templates. Derived overall progress per job.</p>
+  </div>
+  {% if can_manage %}
+  <a class="btn btn-primary" href="{{ url_for('production.from_order_form') }}">+ From Order</a>
+  {% endif %}
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search code / order / customer">
+    <button class="btn btn-secondary" type="submit">Search</button>
+    {% if q %}<a class="btn btn-ghost" href="{{ url_for('production.list_productions') }}">Clear</a>{% endif %}
+  </form>
+</div>
+
+{% if rows %}
+<div class="grid">
+  {% for r in rows %}
+  <a class="card rec-card" href="{{ url_for('production.detail', pid=r.production_id) }}"
+     style="text-decoration:none;color:inherit;display:block">
+    <h3 style="font-family:ui-monospace,monospace;margin:0 0 4px">{{ r.production_code }}
+      <span class="badge {{ 'st-completed' if r.status=='completed' else ('st-cancelled' if r.status=='cancelled' else ('st-partially_paid' if r.status=='blocked' else 'st-in_progress')) }}">{{ r.status }}</span>
+    </h3>
+    <div class="kv">
+      <span class="k">Order</span><span class="v">{{ r.order_number or '—' }}</span>
+      <span class="k">Customer</span><span class="v">{{ r.customer_name or '—' }}</span>
+      <span class="k">Qty</span><span class="v">{{ r.quantity|int }} pcs</span>
+      <span class="k">Current stage</span><span class="v">{{ r.current_stage or '—' }}</span>
+      <span class="k">Deadline</span><span class="v">{{ r.order_deadline or r.deadline or '—' }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="flex:1;height:6px;border-radius:99px;background:var(--border)">
+        <div style="height:6px;border-radius:99px;background:{{ 'var(--success)' if r.overall_progress and r.overall_progress>=100 else 'var(--warning)' }};width:{{ r.overall_progress|default(0) }}%"></div>
+      </div>
+      <span style="font-size:var(--fs-xs);color:var(--text-muted);white-space:nowrap">{{ r.overall_progress|default(0)|int }}%</span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty"><div class="glyph">🏭</div>No productions yet.
+  {% if can_manage %}<div class="action"><a class="btn btn-primary" href="{{ url_for('production.from_order_form') }}">Create production from order</a></div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

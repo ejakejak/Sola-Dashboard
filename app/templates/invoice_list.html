@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block crumb %}Invoices{% endblock %}
+{% block title %}Invoices · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Invoices</h1>
+    <p>{{ rows|length }} invoice(s). Outstanding = grand total − amount paid (auto).</p>
+  </div>
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search invoice / order / customer…">
+    <select name="status">
+      <option value="">All statuses</option>
+      {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if status==s }}>{{ s }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-secondary" type="submit">Filter</button>
+    {% if q or status %}<a class="btn btn-ghost" href="{{ url_for('invoices.list') }}">Clear</a>{% endif %}
+  </form>
+</div>
+
+{% if rows %}
+<div class="card"><div class="card-b">
+  <table class="data">
+    <thead>
+      <tr><th>No.</th><th>Customer</th><th>Order</th><th>Date</th><th>Due</th><th>Grand total</th><th>Paid</th><th>Outstanding</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="num">{{ r.invoice_number }}</td>
+        <td>{{ r.customer_name or '—' }}</td>
+        <td>{{ r.order_number or '—' }}</td>
+        <td>{{ r.invoice_date }}</td>
+        <td>{{ r.due_date or '—' }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(r.grand_total|default(0)|float).replace(',', '.') }}</td>
+        <td class="num-money">Rp {{ "{:,.0f}".format(r.amount_paid|default(0)|float).replace(',', '.') }}</td>
+        <td class="num-money {% if r.outstanding|default(0)|float > 0 %}owed{% endif %}">Rp {{ "{:,.0f}".format(r.outstanding|default(0)|float).replace(',', '.') }}</td>
+        <td><span class="badge st-{{ r.status|lower }}">{{ r.status }}</span></td>
+        <td class="tright">
+          <a class="btn btn-secondary" href="{{ url_for('invoices.detail', iid=r.invoice_id) }}">View</a>
+          {% if can_print %}<a class="btn btn-ghost" href="{{ url_for('invoices.pdf', iid=r.invoice_id) }}" target="_blank">PDF</a>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% else %}
+<div class="card"><div class="card-b empty">
+  <div class="glyph">🧾</div>
+  <p>{% if q or status %}No invoice matches your filters.{% else %}No invoices yet. Generate one from an order.{% endif %}</p>
+</div></div>
+{% endif %}
+{% endblock %}

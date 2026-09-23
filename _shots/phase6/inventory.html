@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inventory · SOLA · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="">Dashboard</a>
+      
+      <a href="/quotations/" class="">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="">Invoices</a>
+      
+      
+      <a href="/production/" class="">Production</a>
+      
+      
+      <a href="/production/templates" class="">Workflow Templates</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+      
+      <a href="/inventory" class="active">Inventory</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Inventory</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>Inventory &amp; Stock</h1>
+    <p>On-hand, reserved and available by material. Available = on-hand − reserved. Low stock when available ≤ 0.</p>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn btn-secondary" href="/inventory/movements">Movements</a>
+    <a class="btn btn-secondary" href="/inventory/usage-log">Usage Log</a>
+  </div>
+</div>
+
+<div class="grid" style="margin-bottom:16px">
+  <div class="card" style="padding:14px 20px">
+    <div style="font-size:var(--fs-micro);color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Total on-hand</div>
+    <div style="font-size:var(--fs-xl);font-weight:700;font-variant-numeric:tabular-nums">29</div>
+    <div class="hint" style="margin:0">across active materials</div>
+  </div>
+  <div class="card" style="padding:14px 20px">
+    <div style="font-size:var(--fs-micro);color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Reserved</div>
+    <div style="font-size:var(--fs-xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--info)">20</div>
+    <div class="hint" style="margin:0">committed but not issued</div>
+  </div>
+  <div class="card" style="padding:14px 20px">
+    <div style="font-size:var(--fs-micro);color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em">Low stock</div>
+    <div style="font-size:var(--fs-xl);font-weight:700;font-variant-numeric:tabular-nums;color:var(--danger)">31</div>
+    <div class="hint" style="margin:0">available ≤ 0</div>
+  </div>
+</div>
+
+<div class="list-quick-add">
+  <div style="display:flex;gap:8px">
+    <a class="btn btn-primary" href="/inventory">All</a>
+    <a class="btn btn-secondary" href="/inventory?low=1">Low stock (31)</a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h"><h2>Materials</h2></div>
+  <div class="card-b" style="padding-top:8px">
+    
+    <table class="data">
+      <thead>
+        <tr>
+          <th>Material</th>
+          <th class="tright">On hand</th>
+          <th class="tright">Reserved</th>
+          <th class="tright">Available</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">A5</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-010</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="61" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="61" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="61" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="61" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="61" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">A6</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-009</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="60" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="60" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="60" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="60" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="60" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">American Drill</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">DR-AM-KR</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="41" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="41" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="41" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="41" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="41" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Baby Terry CVC</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">BT-CVC</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="47" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="47" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="47" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="47" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="47" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Baby Terry Cotton</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">BT-CT</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="48" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="48" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="48" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="48" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="48" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Cotton Carded 24s</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">CD-24S</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="37" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="37" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="37" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="37" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="37" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Cotton Carded 30s</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">CD-30S</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="36" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="36" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="36" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="36" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="36" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Cotton Combed 20s</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">CC-20S</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="35" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="35" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="35" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="35" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="35" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Cotton Combed 24s</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">CC-24S</div>
+          </td>
+          <td class="tright num">29 <span class="muted">Pcs</span></td>
+          <td class="tright num">20</td>
+          <td class="tright num" style="font-weight:700">9</td>
+          <td>
+            
+            <span class="badge st-active">OK</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="34" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="34" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="34" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="34" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="34" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Cotton Combed 30s</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">CC-30S</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="33" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="33" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="33" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="33" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="33" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Diameter 15.5 cm</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-013</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="64" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="64" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="64" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="64" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="64" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Fleece CVC</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">FL-CVC</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="45" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="45" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="45" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="45" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="45" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Fleece Cotton</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">FL-CT</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="46" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="46" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="46" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="46" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="46" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Fleece PE</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">FL-PE</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="44" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="44" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="44" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="44" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="44" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Jersey</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">JR</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="49" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="49" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="49" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="49" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="49" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Jersey + Celana</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">JR-CL</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="50" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="50" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="50" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="50" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="50" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Kanvas</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-004</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="55" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="55" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="55" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="55" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="55" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Lanyard &amp; ID Card</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-012</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="63" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="63" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="63" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="63" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="63" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Lanyard Only</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-011</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="62" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="62" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="62" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="62" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="62" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Mug Sablon</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-003</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="54" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="54" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="54" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="54" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="54" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Mug Sublim</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-002</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="53" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="53" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="53" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="53" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="53" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Nagata Drill</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">DR-NT-KR</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="42" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="42" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="42" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="42" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="42" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Piqe CVC</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">PQ-CVC</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="39" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="39" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="39" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="39" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="39" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Piqe Cotton</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">PQ-CT</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="40" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="40" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="40" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="40" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="40" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Piqe PE</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">PQ-PE</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="38" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="38" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="38" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="38" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="38" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Raffle</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-001</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="52" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="52" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="52" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="52" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="52" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Ribstop</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">RB-PR-VS</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="51" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="51" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="51" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="51" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="51" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Ribstop Premium</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">RB-PR-KR</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="43" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="43" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="43" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="43" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="43" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Tumbler A</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-005</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="56" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="56" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="56" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="56" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="56" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Tumbler C</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-006</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="57" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="57" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="57" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="57" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="57" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Ukuran 20x25</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-007</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="58" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="58" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="58" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="58" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="58" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div style="font-weight:600">Ukuran 25x35</div>
+            <div class="muted" style="font-family:ui-monospace,monospace">MAT-008</div>
+          </td>
+          <td class="tright num">0 <span class="muted">Pcs</span></td>
+          <td class="tright num">0</td>
+          <td class="tright num" style="font-weight:700">0</td>
+          <td>
+            
+            <span class="badge st-low">Low stock</span>
+            
+          </td>
+          <td>
+            
+            <span style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="59" onclick="openModal('adjust', this)">Adjust</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="59" onclick="openModal('reserve', this)">Reserve</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="59" onclick="openModal('release', this)">Release</button>
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="59" onclick="openModal('issue', this)">Issue</button>
+              
+              <button class="btn btn-secondary" style="height:30px;padding:0 8px;font-size:var(--fs-xs)"
+                data-mat="59" onclick="openModal('usage', this)">Usage</button>
+              
+            </span>
+            
+          </td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </div>
+</div>
+
+<!-- Action modal (drawer-style dialog) -->
+<div id="inv-modal" style="position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;z-index:50;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:12px;width:min(480px,94vw);max-height:90vh;overflow:auto;box-shadow:var(--shadow-hover)">
+    <div class="card-h" style="border-bottom:1px solid var(--border)">
+      <h2 id="inv-modal-title">Action</h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="muted" id="inv-modal-mat" style="font-size:var(--fs-xs)"></span>
+        <button class="btn btn-ghost" style="height:32px;padding:0 8px" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <form id="inv-modal-form" method="post" style="padding:16px 20px">
+      <input type="hidden" name="material_id" id="f-material_id">
+      <!-- ADJUST -->
+      <div id="sec-adjust">
+        <div class="form-row">
+          <label>Delta <span class="req">*</span> <span class="muted" style="font-weight:400">(signed; e.g. +50 or −10)</span></label>
+          <input type="number" step="any" name="delta" required>
+        </div>
+        <div class="form-row"><label>Reason</label><input type="text" name="reason" placeholder="Stock take / correction…"></div>
+      </div>
+      <!-- RESERVE -->
+      <div id="sec-reserve" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Reference type</label>
+          <select name="reference_type"><option value="order">order</option><option value="order_item">order_item</option></select>
+        </div>
+        <div class="form-row"><label>Reference ID</label><input type="text" name="reference_id" placeholder="optional"></div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <!-- RELEASE -->
+      <div id="sec-release" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span> <span class="muted" style="font-weight:400">(deducts on-hand, clears reserved)</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <!-- ISSUE (OUT) -->
+      <div id="sec-issue" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span> <span class="muted" style="font-weight:400">(OUT deduction)</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Reference type</label>
+          <select name="reference_type"><option value="order_item">order_item</option><option value="order">order</option></select>
+        </div>
+        <div class="form-row"><label>Reference ID</label><input type="text" name="reference_id"></div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <!-- USAGE -->
+      <div id="sec-usage" style="display:none">
+        <div class="form-row"><label>Quantity <span class="req">*</span></label><input type="number" step="any" name="quantity" min="0.0001" required></div>
+        <div class="form-row"><label>Production <span class="req">*</span></label>
+          <select name="production_id" class="production-select" required>
+            <option value="">— select production —</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Notes</label><input type="text" name="notes"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <button class="btn btn-secondary" type="button" onclick="closeModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const ACTIONS = {
+  adjust:  { url: "/inventory/adjust",  title: "Adjust on-hand (ADJUSTMENT)" },
+  reserve: { url: "/inventory/reserve", title: "Reserve stock (RESERVED)" },
+  release: { url: "/inventory/release", title: "Release / fulfill (RELEASED → OUT)" },
+  issue:   { url: "/inventory/issue",   title: "Issue (OUT)" },
+  usage:   { url: "/inventory/usage", title: "Record material usage" },
+};
+function openModal(action, btn) {
+  const cfg = ACTIONS[action];
+  document.getElementById('inv-modal-title').textContent = cfg.title;
+  document.getElementById('inv-modal-form').action = cfg.url;
+  document.getElementById('f-material_id').value = btn.dataset.mat;
+  document.getElementById('inv-modal-mat').textContent = btn.closest('tr') ? btn.closest('tr').querySelector('td .muted').textContent : '#' + btn.dataset.mat;
+  ['adjust','reserve','release','issue','usage'].forEach(k => {
+    document.getElementById('sec-' + k).style.display = (k === action ? '' : 'none');
+  });
+  document.getElementById('inv-modal').style.display = 'flex';
+  if (action === 'usage' && !document.querySelector('.production-select option[value]').value) {
+    fetch("/inventory/productions").then(r => r.json()).then(list => {
+      const sel = document.querySelector('.production-select');
+      sel.innerHTML = '<option value="">— select production —</option>' +
+        list.map(p => `<option value="${p.production_id}">${p.production_code} · ${p.customer_name || ''}</option>`).join('');
+    }).catch(() => {});
+  }
+}
+function closeModal() { document.getElementById('inv-modal').style.display = 'none'; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

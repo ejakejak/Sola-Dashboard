@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="active">Dashboard</a>
+      
+      <a href="/quotations/" class="">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="">Invoices</a>
+      
+      
+      <a href="/production/" class="">Production</a>
+      <a href="/production/board" class="">Board</a>
+      
+      
+      <a href="/production/templates" class="">Workflow Templates</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+      
+      <a href="/inventory" class="">Inventory</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Dashboard</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p>Live overview — every number is computed from the database on this request.</p>
+  </div>
+  <div class="btn-group">
+    <a class="btn btn-secondary" href="/production/board">Production Board</a>
+  </div>
+</div>
+
+
+<div class="kpi-grid">
+  
+  <a class="kpi-card" href="/orders" data-kpi="active_orders" data-value="1">
+    <div class="kpi-icon" style="background:var(--info--surface);color:var(--info)"></div>
+    <div class="kpi-body">
+      <div class="kpi-value" style="color:var(--info)">1</div>
+      <div class="kpi-label">Active Orders</div>
+      <div class="kpi-sub">not completed / cancelled</div>
+    </div>
+  </a>
+  
+  <a class="kpi-card" href="/production/" data-kpi="in_production" data-value="1">
+    <div class="kpi-icon" style="background:var(--warning--surface);color:var(--warning)"></div>
+    <div class="kpi-body">
+      <div class="kpi-value" style="color:var(--warning)">1</div>
+      <div class="kpi-label">In Production</div>
+      <div class="kpi-sub">jobs in the pipeline</div>
+    </div>
+  </a>
+  
+  <a class="kpi-card" href="/invoices/" data-kpi="waiting_payment" data-value="0">
+    <div class="kpi-icon" style="background:var(--warning--surface);color:var(--warning)"></div>
+    <div class="kpi-body">
+      <div class="kpi-value" style="color:var(--warning)">0</div>
+      <div class="kpi-label">Waiting Payment</div>
+      <div class="kpi-sub">invoices with a balance</div>
+    </div>
+  </a>
+  
+  <a class="kpi-card" href="/production/" data-kpi="ready_to_ship" data-value="0">
+    <div class="kpi-icon" style="background:var(--success--surface);color:var(--success)"></div>
+    <div class="kpi-body">
+      <div class="kpi-value" style="color:var(--success)">0</div>
+      <div class="kpi-label">Ready to Ship</div>
+      <div class="kpi-sub">completed, not shipped</div>
+    </div>
+  </a>
+  
+  <a class="kpi-card" href="/production/board" data-kpi="overdue" data-value="0">
+    <div class="kpi-icon" style="background:var(--danger--surface);color:var(--danger)"></div>
+    <div class="kpi-body">
+      <div class="kpi-value" style="color:var(--danger)">0</div>
+      <div class="kpi-label">Overdue</div>
+      <div class="kpi-sub">past deadline</div>
+    </div>
+  </a>
+  
+  <a class="kpi-card" href="/invoices/" data-kpi="outstanding_invoice" data-value="0">
+    <div class="kpi-icon" style="background:var(--danger--surface);color:var(--danger)"></div>
+    <div class="kpi-body">
+      <div class="kpi-value" style="color:var(--danger)">0</div>
+      <div class="kpi-label">Outstanding Invoice</div>
+      <div class="kpi-sub">sum owed (IDR)</div>
+    </div>
+  </a>
+  
+</div>
+
+<div class="dash-cols">
+  
+  <section class="card dash-card">
+    <div class="card-h"><h2>Production Board snapshot</h2>
+      <a class="btn btn-ghost" href="/production/board">Open Board →</a>
+    </div>
+    <div class="card-b">
+      
+      
+      <div class="bar-row">
+        <span class="bar-label">ORDER</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:100.0%;background:var(--neutral)"></div>
+        </div>
+        <span class="bar-count ">1</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">MATERIAL PREPARATION</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--info)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">CUTTING</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--info)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">SEWING</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--warning)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">PRINTING</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--warning)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">FINISHING</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--warning)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">QC</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--info)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">PACKING</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--warning)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+      <div class="bar-row">
+        <span class="bar-label">COMPLETED</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:0.0%;background:var(--success)"></div>
+        </div>
+        <span class="bar-count text-danger">0</span>
+      </div>
+      
+    </div>
+  </section>
+
+  
+  <section class="card dash-card">
+    <div class="card-h"><h2>Alerts</h2></div>
+    <div class="card-b alert-stack">
+      <div class="alert-card alert-low" style="border-color:var(--danger-border)">
+        <div class="alert-title" style="color:var(--danger)">Low stock</div>
+        <div class="alert-body">
+          
+          <span class="muted-ok">No tracked materials are below the threshold.</span>
+          
+        </div>
+      </div>
+
+      <div class="alert-card alert-deadline" style="border-color:var(--warning-border)">
+        <div class="alert-title" style="color:var(--warning)">Upcoming deadlines</div>
+        <div class="alert-body">
+          
+          <ul class="alert-ul">
+            
+            <li><a href="/production/1">PRD-260922-001</a>
+                <span class="muted-inline">due 2026-12-01 · 12 pcs</span></li>
+            
+          </ul>
+          
+        </div>
+      </div>
+
+      <div class="alert-card alert-unpaid" style="border-color:var(--danger-border)">
+        <div class="alert-title" style="color:var(--danger)">Unpaid invoices</div>
+        <div class="alert-body">
+          
+          <span class="muted-ok">No unpaid invoices.</span>
+          
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+
+<section class="card dash-card" style="margin-top:20px">
+  <div class="card-h"><h2>Recent production updates</h2></div>
+  <div class="card-b feed">
+    
+    <div class="empty"><div class="glyph">🗒️</div>No production updates yet.</div>
+    
+  </div>
+</section>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

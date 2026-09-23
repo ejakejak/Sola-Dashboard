@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block crumb %}Workflow Templates · {{ 'Edit' if t else 'New' }}{% endblock %}
+{% block title %}{{ 'Edit' if t else 'New' }} Workflow Template · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ 'Edit' if t else 'New' }} Workflow Template</h1>
+    <p>Stages run in the order given; the last stage is the completion gate.</p>
+  </div>
+  <a class="btn btn-secondary" href="{{ url_for('production.template_list') }}">← Back to templates</a>
+</div>
+
+<div class="card form-card"><div class="card-b">
+  <form method="post">
+    <div class="form-grid">
+      <div class="form-row"><label>Template name <span class="req">*</span></label>
+        <input type="text" name="template_name" required value="{{ form.get('template_name', t.template_name if t else '') }}">
+      </div>
+      <div class="form-row"><label>Product category <span class="hint" style="display:inline">(blank = catch-all)</span></label>
+        <select name="product_category_id">
+          <option value="">— None / catch-all —</option>
+          {% for c in category_options %}
+          <option value="{{ c.category_id }}" {% if (form.get('product_category_id') or t.product_category_id if t else '')|int == c.category_id %}selected{% endif %}>{{ c.category_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" name="is_default" value="1" {% if (form.get('is_default') or (t.is_default if t else 0)) %}checked{% endif %} style="height:auto"> Default template
+    </label>
+      <span class="hint">Used when no category-specific template is chosen.</span></div>
+
+    <h3 style="margin:18px 0 8px;font-size:var(--fs-lg)">Stages (in order)</h3>
+    <div id="steps">
+      {% if steps %}
+        {% for s in steps %}
+        <div class="form-row step-row">
+          <input type="text" name="step_name[]" value="{{ s.stage_name }}" placeholder="Stage name e.g. CUTTING">
+          <span class="hint">{{ 'completion' if s.is_completion else 'step ' ~ loop.index }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        {% for v in form.getlist('step_name[]') %}
+        <div class="form-row step-row"><input type="text" name="step_name[]" value="{{ v }}" placeholder="Stage name e.g. CUTTING"></div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <a class="btn btn-secondary" href="#" onclick="addStep();return false;">+ Add step</a>
+
+    <div class="form-actions" style="margin-top:16px">
+      <button class="btn btn-primary" type="submit">Save template</button>
+      <a class="btn btn-ghost" href="{{ url_for('production.template_list') }}">Cancel</a>
+    </div>
+  </form>
+</div></div>
+
+<script>
+function addStep(){var d=document.getElementById('steps');var r=document.createElement('div');r.className='form-row step-row';r.innerHTML='<input type="text" name="step_name[]" placeholder="Stage name e.g. CUTTING">';d.appendChild(r);}
+</script>
+{% endblock %}

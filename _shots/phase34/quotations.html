@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quotations · SOLA · SOLA Konveksi</title>
+  <link rel="stylesheet" href="file:///D:/Sola/app/static/css/app.css">
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="file:///D:/Sola/app/static/assets/sola-logo-1.png" alt="SOLA">
+      <span>SOLA Dash</span>
+    </div>
+    <nav>
+      <a href="/" class="">Dashboard</a>
+      
+      <a href="/quotations/" class="active">Quotations</a>
+      
+      
+      <a href="/orders/" class="">Orders</a>
+      
+      
+      <a href="/invoices/" class="">Invoices</a>
+      
+      
+      <a href="/master-data/" class="">Master Data</a>
+      
+    </nav>
+    <div class="sec-label">Later phases</div>
+    <nav>
+      <a class="is-off" title="Not built yet — Phase 5">Production</a>
+      <a class="is-off" title="Not built yet — Phase 6">Inventory</a>
+      <a class="is-off" title="Not built yet — Phase 7">/track</a>
+    </nav>
+    <div class="foot">Sola Konveksi Yogyakarta</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">Quotations</div>
+      <div class="user">
+        
+        <span>admin</span>
+        <span class="role-chip">Administrator</span>
+        <a class="btn btn-ghost" href="/logout">Sign out</a>
+        
+      </div>
+    </header>
+    <main class="content">
+      
+        
+      
+      
+<div class="page-head">
+  <div>
+    <h1>Quotations</h1>
+    <p>1 quotation(s). Approved quotations convert once into a Sales Order.</p>
+  </div>
+  
+  <a class="btn btn-primary" href="/quotations/new">+ New Quotation</a>
+  
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="" placeholder="Search number / customer…">
+    <button class="btn btn-secondary" type="submit">Search</button>
+    
+  </form>
+</div>
+
+
+<div class="card"><div class="card-b">
+  <table class="data">
+    <thead>
+      <tr><th>No.</th><th>Customer</th><th>Date</th><th>Valid until</th><th>Total</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td class="num">QUO-2026-0001</td>
+        <td>Live Smoke Customer</td>
+        <td>2026-09-22</td>
+        <td>2026-11-30</td>
+        <td class="num-money">Rp 660.000</td>
+        <td><span class="badge st-converted">converted</span></td>
+        <td class="tright"><a class="btn btn-secondary" href="/quotations/1">View</a></td>
+      </tr>
+      
+    </tbody>
+  </table>
+</div></div>
+
+
+    </main>
+  </div>
+</div>
+</body>
+</html>

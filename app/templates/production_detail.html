@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block crumb %}Production · {{ p.production_code }}{% endblock %}
+{% block title %}{{ p.production_code }} · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ p.production_code }}
+      <span class="badge {{ 'st-completed' if p.status=='completed' else ('st-cancelled' if p.status=='cancelled' else ('st-partially_paid' if p.status=='blocked' else 'st-in_progress')) }}">{{ p.status }}</span>
+      <span class="badge st-normal" style="margin-left:6px">stage {{ p.current_stage or '—' }}</span>
+    </h1>
+    <p>{{ p.customer_name or '—' }}{% if p.company_name %} · {{ p.company_name }}{% endif %} · Order {{ p.order_number }} · {{ p.quantity|int }} pcs{% if p.order_deadline %} · due {{ p.order_deadline }}{% endif %}</p>
+  </div>
+  {% if can_manage %}
+  <a class="btn btn-secondary" href="{{ url_for('production.from_order_form') }}">New production</a>
+  {% endif %}
+</div>
+
+<div class="grid" style="grid-template-columns:1fr 1fr">
+  <!-- LEFT: timeline -->
+  <div class="card"><div class="card-h"><h2>Timeline</h2>
+    <span class="hint">template: {{ template.template_name if template else '—' }}</span></div>
+  <div class="card-b">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="flex:1;height:8px;border-radius:99px;background:var(--border)">
+        <div style="height:8px;border-radius:99px;background:{{ 'var(--success)' if p.overall_progress and p.overall_progress>=100 else 'var(--warning)' }};width:{{ p.overall_progress|default(0) }}%"></div>
+      </div>
+      <span style="font-size:var(--fs-sm);font-weight:600">{{ p.overall_progress|default(0)|int }}%</span>
+    </div>
+
+    {% for s in stages %}
+    <details class="stage-card" {% if s.status=='in_progress' or s.status=='completed' %}open{% endif %} style="border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:12px">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="badge {{ 'st-completed' if s.status=='completed' else ('st-cancelled' if s.status=='cancelled' else ('st-partially_paid' if s.status=='blocked' else ('st-sent' if s.status=='in_progress' else 'st-normal'))) }}">{{ s.status }}</span>
+        <strong>{{ loop.index }}. {{ s.stage_name }}</strong>
+        {% if s.is_completion %}<span class="hint">completion</span>{% endif %}
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--text-muted)">{{ stage_progress.get(s.production_stage_id, 0)|int }}% · {{ s.pic_name or 'unassigned' }}</span>
+      </summary>
+      <div style="margin-top:10px">
+        <div class="kv" style="grid-template-columns:1fr 2fr">
+          <span class="k">Vendor</span><span class="v">{{ s.vendor_name or '—' }}</span>
+          <span class="k">Target qty</span><span class="v">{{ s.target_quantity|int }}</span>
+          <span class="k">Completed</span><span class="v">{{ s.completed_quantity|int }}</span>
+          <span class="k">Rejected</span><span class="v">{{ s.rejected_quantity|int }}</span>
+          <span class="k">Started</span><span class="v">{{ s.start_at or '—' }}</span>
+          <span class="k">Completed at</span><span class="v">{{ s.completed_at or '—' }}</span>
+          <span class="k">Notes</span><span class="v">{{ s.notes or '—' }}</span>
+        </div>
+        {% if can_manage %}
+        <form method="post" action="{{ url_for('production.advance_stage', pid=p.production_id, sid=s.production_stage_id) }}" class="form-grid" style="margin-top:8px">
+          <div class="form-row"><label>Status</label>
+            <select name="status">
+              {% for st in stage_statuses %}<option value="{{ st }}" {% if st==s.status %}selected{% endif %}>{{ st }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="form-row"><label>Target qty</label><input type="number" step="any" name="target_quantity" value="{{ s.target_quantity or '' }}"></div>
+          <div class="form-row"><label>Completed qty</label><input type="number" step="any" name="completed_quantity" value="{{ s.completed_quantity or '' }}"></div>
+          <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity" value="{{ s.rejected_quantity or '' }}"></div>
+          <div class="form-row"><label>Notes</label><textarea name="notes">{{ s.notes or '' }}</textarea></div>
+          <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Update stage</button></div>
+        </form>
+        {% endif %}
+      </div>
+    </details>
+    {% else %}
+    <div class="empty">No stages materialized.</div>
+    {% endfor %}
+  </div></div>
+
+  <!-- RIGHT: details & media -->
+  <div>
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Details</h2></div>
+    <div class="card-b">
+      <div class="kv" style="grid-template-columns:1fr 2fr">
+        <span class="k">Order</span><span class="v">{{ p.order_number or '—' }}</span>
+        <span class="k">Customer</span><span class="v">{{ p.customer_name or '—' }}</span>
+        <span class="k">Quantity</span><span class="v">{{ p.quantity|int }}</span>
+        <span class="k">Variant / product</span><span class="v">{{ p.product_id or p.variant_id or '—' }}</span>
+        <span class="k">Created</span><span class="v">{{ p.created_at }}</span>
+        <span class="k">Updated</span><span class="v">{{ p.updated_at }}</span>
+      </div>
+    </div></div>
+
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Updates</h2></div>
+    <div class="card-b">
+      {% if can_manage %}
+      <form method="post" action="{{ url_for('production.add_update', pid=p.production_id) }}" class="form-grid">
+        <div class="form-row"><label>Progress %</label><input type="number" min="0" max="100" name="progress"></div>
+        <div class="form-row"><label>Qty completed</label><input type="number" step="any" name="quantity_completed"></div>
+        <div class="form-row"><label>Qty rejected</label><input type="number" step="any" name="quantity_rejected"></div>
+        <div class="form-row"><label>Notes</label><textarea name="notes"></textarea></div>
+        <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Add update</button></div>
+      </form>
+      {% endif %}
+      {% if updates %}
+      <ul style="list-style:none;padding:0;margin:12px 0 0">
+        {% for u in updates %}
+        <li style="padding:8px 0;border-bottom:1px solid var(--border);font-size:var(--fs-sm)">
+          <strong>{{ u.username or '—' }}</strong> · {{ u.timestamp }} — {{ u.progress|int if u.progress is not none else '—' }}%,
+          +{{ u.quantity_completed|int if u.quantity_completed is not none else 0 }}/rej {{ u.quantity_rejected|int if u.quantity_rejected is not none else 0 }}
+          {% if u.notes %}<div style="color:var(--text-muted)">{{ u.notes }}</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<div class="empty" style="padding:12px">No updates yet.</div>{% endif %}
+    </div></div>
+
+    <div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Media</h2>
+      <span class="hint">INTERNAL shown only with internal-read permission</span></div>
+    <div class="card-b">
+      {% if can_manage %}
+      <form method="post" action="{{ url_for('production.upload_media', pid=p.production_id) }}" enctype="multipart/form-data" class="form-row">
+        <label>Upload file</label>
+        <input type="file" name="file" required>
+        <label>Visibility</label>
+        <select name="visibility">
+          <option value="CUSTOMER">👁 Customer-visible</option>
+          <option value="INTERNAL" selected>🔒 Internal only</option>
+        </select>
+        <button class="btn btn-primary" type="submit" style="margin-top:8px">Upload</button>
+      </form>
+      {% endif %}
+      {% if media %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:12px">
+        {% for m in media %}
+        <div style="border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center">
+          <a href="{{ url_for('production.media_file', mid=m.media_id) }}" target="_blank" style="font-size:var(--fs-xs)">{{ m.file_type }}
+            {% if m.visibility=='INTERNAL' %}🔒{% else %}👁{% endif %}
+          </a>
+          <div class="badge {{ 'st-partially_paid' if m.visibility=='INTERNAL' else 'st-approved' }}" style="margin-top:6px">{{ m.visibility }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<div class="empty" style="padding:12px">No media yet.</div>{% endif %}
+    </div></div>
+
+    <div class="card"><div class="card-h"><h2>Quality Control</h2></div>
+    <div class="card-b">
+      {% if can_qc %}
+      <form method="post" action="{{ url_for('production.record_qc', pid=p.production_id) }}" class="form-grid">
+        <div class="form-row"><label>Result</label>
+          <select name="status">
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+            <option value="rework">Rework</option>
+          </select>
+        </div>
+        <div class="form-row"><label>Passed qty</label><input type="number" step="any" name="passed_quantity"></div>
+        <div class="form-row"><label>Rejected qty</label><input type="number" step="any" name="rejected_quantity"></div>
+        <div class="form-row"><label>Defect type</label><input type="text" name="defect_type"></div>
+        <div class="form-row"><label>Return to stage (rework)</label>
+          <select name="return_stage_id"><option value="">—</option>
+            {% for s in stages %}<option value="{{ s.production_stage_id }}">{{ s.stage_name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-row" style="grid-column:1/-1"><label>Notes</label><textarea name="notes"></textarea></div>
+        <div class="form-row" style="grid-column:1/-1"><label>Evidence</label><input type="text" name="evidence"></div>
+        <div class="form-actions" style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Record QC</button></div>
+      </form>
+      {% endif %}
+      {% if qcs %}
+      <ul style="list-style:none;padding:0;margin:12px 0 0">
+        {% for q in qcs %}
+        <li style="padding:8px 0;border-bottom:1px solid var(--border);font-size:var(--fs-sm)">
+          <strong>{{ q.inspector_name or '—' }}</strong> · {{ q.inspected_at }} ·
+          <span class="badge {{ 'st-approved' if q.status=='passed' else ('st-cancelled' if q.status=='failed' else 'st-partially_paid') }}">{{ q.status }}</span>
+          pass {{ q.passed_quantity|int }} · rej {{ q.rejected_quantity|int }}{% if q.defect_type %} · {{ q.defect_type }}{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<div class="empty" style="padding:12px">No QC recorded yet.</div>{% endif %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

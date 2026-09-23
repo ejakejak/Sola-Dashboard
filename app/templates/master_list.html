@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block crumb %}Master Data · {{ res.title }}{% endblock %}
+{% block title %}{{ res.title }} · SOLA{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ res.title }}</h1>
+    <p>{{ count }} record(s). Cards + grouped forms per DESIGN_SPEC — not a giant table.</p>
+  </div>
+  {% if can_create %}
+  <a class="btn btn-primary" href="{{ url_for('master.create', key=res.key) }}">+ New {{ res.title.rstrip('s') }}</a>
+  {% endif %}
+</div>
+
+<div class="list-quick-add">
+  <form method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search {{ res.key }}…">
+    <button class="btn btn-secondary" type="submit">Search</button>
+    {% if q %}<a class="btn btn-ghost" href="{{ url_for('master.list_resource', key=res.key) }}">Clear</a>{% endif %}
+  </form>
+</div>
+
+{% if cards %}
+<div class="grid">
+  {% for c in cards %}
+  <div class="card rec-card">
+    <h3>{{ c.title }}</h3>
+    <div class="kv">
+      {% for it in c.fields %}
+      <span class="k">{{ it.label }}</span>
+      <span class="v {% if it.label == 'Status' %}badge {{ it.value|lower }}{% endif %}">{{ it.value }}</span>
+      {% endfor %}
+    </div>
+    {% if can_edit %}
+    <a class="btn btn-secondary" href="{{ url_for('master.update', key=res.key, rid=c.id) }}">Edit</a>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card"><div class="card-b empty">
+  <div class="glyph">🗂</div>
+  {% if q %}
+    <p>No {{ res.key }} match “{{ q }}”.</p>
+    <div class="action"><a class="btn btn-ghost" href="{{ url_for('master.list_resource', key=res.key) }}">Clear filters</a></div>
+  {% else %}
+    <p>No {{ res.title.lower() }} yet.</p>
+    {% if can_create %}<div class="action"><a class="btn btn-primary" href="{{ url_for('master.create', key=res.key) }}">Create first {{ res.title.rstrip('s') }}</a></div>{% endif %}
+  {% endif %}
+</div></div>
+{% endif %}
+{% endblock %}

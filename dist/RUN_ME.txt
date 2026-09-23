@@ -1,0 +1,90 @@
+========================================================
+ SOLA — Konveksi & Production Management  ·  v1.0.0
+ DEPLOYMENT RUNBOOK (Windows, local single PC)
+ READ THIS FIRST — exact commands, in order.
+========================================================
+
+WHAT YOU ARE RUNNING
+  A local-first Flask web app + SQLite. One process, one PC.
+  This package has NO secrets and NO database — you create both below.
+
+QUICKSTART (fresh machine)
+  1) cd to the extracted folder (e.g. D:\Sola)
+     cd D:\Sola
+
+  2) create a virtualenv and install Python deps
+     py -3 -m venv .venv
+     .venv\Scripts\activate
+     pip install -r requirements.txt
+
+  3) create your environment file from the template
+     copy .env.example .env
+     -> EDIT .env and set FLASK_SECRET_KEY (required!)
+        generate one:  python -c "import secrets; print(secrets.token_hex(32))"
+        (Leaving it blank/change-me will stop the app on purpose.)
+
+  4) initialise the database schema
+     python db/init_schema.py
+
+  5) [FIRST TIME ONLY] migrate master data from Excel source
+     (requires data/master.xlsx to be present — it is included)
+     python scripts/import_excel.py
+     (skip this if you are redeploying onto an existing database)
+
+  6) seed roles / permissions / users + catalog + workflows
+     python -c "from seed.seed_auth import ensure_seeded; from app.config import Config; ensure_seeded(Config().DATABASE_PATH, verbose=True)"
+
+  7)  ROTATE THE ADMIN PASSWORD  (REQUIRED — default admin/sola123 must NOT ship)
+     Windows cmd / PowerShell:
+       set SOLA_ADMIN_PASSWORD=ChangeMe!2026 && python scripts/rotate_admin_password.py
+     or interactively:
+       python scripts/rotate_admin_password.py
+     (10+ chars; the value 'sola123' is rejected; a #ADMIN_PASSWORD_ROTATED
+      audit row is written. Re-seeding later will NOT undo this.)
+
+  8) start the app
+     python run.py
+     -> open http://127.0.0.1:5000  in a browser
+     -> log in: admin  +  the password you set in step 7
+
+DAILY START
+  cd D:\Sola && .venv\Scripts\activate && python run.py
+
+VERIFY EVERYTHING
+  · run the test suite (87 tests):
+      python -m unittest discover -s tests -p 'test_*.py'
+      -> expect:  Ran 87 tests ... OK
+  · check database integrity (expect an empty list [ ]):
+      python -c "import sqlite3;from app.config import Config;print(sqlite3.connect(Config().DATABASE_PATH).execute('PRAGMA foreign_key_check').fetchall())"
+  · sanity URLs when the app is up:
+      GET  http://127.0.0.1:5000/            -> redirects to /login
+      GET  http://127.0.0.1:5000/track       -> public tracking page (no login)
+
+BACKUP (do this before any upgrade)
+  stop the app, then copy instance/sola.db aside
+      copy instance\sola.db  sola-backup-YYYYMMDD.db
+
+CONFIG / SECURITY NOTES
+  · .env and instance/ are gitignored and are NOT in this zip — you create them.
+  · Do not commit .env or the Google service-account JSON
+    (instance/sola-509413-service-account.json) anywhere.
+  · Only FLASK_SECRET_KEY is mandatory. The RATE_LIMIT_* and SPREADSHEET/GOOGLE
+    keys are optional (see .env.example).
+  · Scope by design: single-process + SQLite. Multi-worker / Redis / LAN
+    multi-user hosting is out of scope (see docs/DEPLOYMENT.md).
+
+DOCS INSIDE THIS PACKAGE
+  docs/README            -> see README.md (root)
+  docs/USER_ROLES.md     -> the 8 roles + permission matrix
+  docs/API.md            -> route / endpoint catalog
+  docs/TESTING.md        -> how to run the suite + per-file coverage
+  docs/DEPLOYMENT.md     -> this runbook, expanded
+  docs/ACCEPTANCE.md     -> 17 acceptance criteria (A-Q), all verified
+  docs/SAMPLE_INVOICE.pdf-> sample invoice PDF (deliverable)
+
+TROUBLESHOOTING
+  "FLASK_SECRET_KEY is not set" -> copy .env.example to .env and set the key (step 3)
+  "no such table: users"        -> run step 4 (schema init) before seeding
+  'sola123' no longer works     -> that is expected after step 7; use the new password
+  Port 5000 busy                -> set SOLA_PORT=5001 before `python run.py`
+========================================================

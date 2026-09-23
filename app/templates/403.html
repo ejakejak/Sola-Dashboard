@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>403 · SOLA</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card blocker-center" style="text-align:center">
+    <div style="width:100%">
+      <div class="glyph" style="font-size:40px">🚫</div>
+      <h1>403 — Forbidden</h1>
+      <p class="sub">Your role does not permit this action. The check was enforced on the server,
+        not merely hidden in the UI.</p>
+      <div class="form-actions" style="justify-content:center">
+        <a class="btn btn-secondary" href="{{ url_for('index') }}">Back to dashboard</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
