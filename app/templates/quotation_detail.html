@@ -8,6 +8,9 @@
     <p>{{ q.customer_name or '—' }} · {{ q.quotation_date }}{% if q.valid_until %} · valid until {{ q.valid_until }}{% endif %}</p>
   </div>
   <div class="form-actions">
+    {% if c_update and q.status == 'draft' %}
+    <a class="btn btn-primary" href="{{ url_for('quotations.edit', qid=q.quotation_id) }}">Edit Draft</a>
+    {% endif %}
     {% if c_update and (q.status in ['draft','sent']) %}
     <form method="post" action="{{ url_for('quotations.set_status', qid=q.quotation_id) }}" style="display:contents">
       <select name="status">

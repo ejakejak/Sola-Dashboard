@@ -1,11 +1,16 @@
 {% extends "base.html" %}
-{% block crumb %}Quotations · New{% endblock %}
-{% block title %}New Quotation · SOLA{% endblock %}
+{% block crumb %}{% if is_edit %}Quotations · {{ q.quotation_number }} · Edit{% else %}Quotations · New{% endif %}{% endblock %}
+{% block title %}{% if is_edit %}Edit Quotation {{ q.quotation_number }} · SOLA{% else %}New Quotation · SOLA{% endif %}{% endblock %}
 {% block content %}
 <div class="page-head">
   <div>
+    {% if is_edit %}
+    <h1>Edit Draft — {{ q.quotation_number }}</h1>
+    <p>Customer, dates & line items (selling price from catalog). Number & status remain {{ q.quotation_number }} · draft.</p>
+    {% else %}
     <h1>New Quotation</h1>
     <p>Customer & line items (selling price from catalog). Created as draft — status is set from the detail page.</p>
+    {% endif %}
   </div>
 </div>
 
@@ -22,6 +27,10 @@
             <option value="{{ c.customer_id }}" {{ 'selected' if form.get('customer_id')|string == c.customer_id|string }}>{{ c.name }}{% if c.company_name %} · {{ c.company_name }}{% endif %}</option>
             {% endfor %}
           </select>
+        </div>
+        <div class="form-row">
+          <label>Quotation date</label>
+          <input type="date" name="quotation_date" value="{{ form.get('quotation_date') or '' }}">
         </div>
         <div class="form-row">
           <label>Valid until</label>
@@ -46,6 +55,19 @@
         <div class="li-head">
           <span>Product</span><span>Material</span><span>Decoration</span><span>Qty</span><span>Unit</span><span>Unit price</span><span></span>
         </div>
+        {% if is_edit and edit_items %}
+          {% for it in edit_items %}
+          <div class="li-row">
+            <select name="item_product[]"><option value=""></option>{% for p in products %}<option value="{{ p.product_id }}" {{ 'selected' if it.product_id and it.product_id|string == p.product_id|string }}>{{ p.product_name }}</option>{% endfor %}</select>
+            <select name="item_material[]"><option value=""></option>{% for m in materials %}<option value="{{ m.material_id }}" {{ 'selected' if it.material_id and it.material_id|string == m.material_id|string }}>{{ m.material_name }}</option>{% endfor %}</select>
+            <select name="item_decoration[]"><option value=""></option>{% for d in decorations %}<option value="{{ d.decoration_id }}" {{ 'selected' if it.decoration_id and it.decoration_id|string == d.decoration_id|string }}>{{ d.decoration_name }}</option>{% endfor %}</select>
+            <input type="number" step="any" min="1" name="item_qty[]" placeholder="qty" value="{{ it.quantity or '' }}">
+            <select name="item_unit[]"><option value=""></option>{% for u in units %}<option value="{{ u.unit_id }}" {{ 'selected' if it.unit_id and it.unit_id|string == u.unit_id|string }}>{{ u.unit_code }}</option>{% endfor %}</select>
+            <input type="number" step="any" min="0" name="item_price[]" placeholder="price (auto)" value="{{ it.unit_price or '' }}">
+            <button type="button" class="btn btn-ghost" onclick="this.closest('.li-row').remove()">✕</button>
+          </div>
+          {% endfor %}
+        {% else %}
         <div class="li-row">
           <select name="item_product[]"><option value=""></option>{% for p in products %}<option value="{{ p.product_id }}">{{ p.product_name }}</option>{% endfor %}</select>
           <select name="item_material[]"><option value=""></option>{% for m in materials %}<option value="{{ m.material_id }}" data-cat="{{ m.material_name }}">{{ m.material_name }}</option>{% endfor %}</select>
@@ -55,19 +77,27 @@
           <input type="number" step="any" min="0" name="item_price[]" placeholder="price (auto)">
           <button type="button" class="btn btn-ghost" onclick="this.closest('.li-row').remove()">✕</button>
         </div>
+        {% endif %}
       </div>
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" id="addline">+ Add line</button>
+        {% if is_edit %}
+        <button class="btn btn-primary" type="submit">Save Changes</button>
+        <a class="btn btn-secondary" href="{{ url_for('quotations.detail', qid=q.quotation_id) }}">Cancel</a>
+        {% else %}
         <button class="btn btn-primary" type="submit">Save Quotation</button>
         <a class="btn btn-secondary" href="{{ url_for('quotations.list') }}">Cancel</a>
+        {% endif %}
       </div>
     </form>
   </div>
 </div>
 
 <script>
-const lineTpl = document.getElementById('lines').children[1].innerHTML;
+const lineTpl = document.querySelector('#lines .li-row').innerHTML;
 function cloneLine(){ const d=document.createElement('div'); d.className='li-row'; d.innerHTML=lineTpl;
+  d.querySelectorAll('input').forEach(i=>i.value='');
+  d.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
   d.querySelector('button').onclick=function(){this.closest('.li-row').remove()}; document.getElementById('lines').appendChild(d); }
 document.getElementById('addline').onclick=cloneLine;
 </script>

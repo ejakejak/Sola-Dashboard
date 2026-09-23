@@ -381,6 +381,111 @@ def detail(qid):
                            c_update=_has("quotation.update"), c_convert=_has("quotation.convert"))
 
 
+@QUOTE_BP.route("/<int:qid>/edit", methods=["GET", "POST"])
+@require_permission("quotation.update")
+def edit(qid):
+    rel = _rel()
+    q = rel.table("quotations").get(qid)
+    if q is None:
+        abort(404)
+    if q["status"] != "draft":
+        flash("Only DRAFT quotations can be edited.", "danger")
+        return redirect(url_for("quotations.detail", qid=qid))
+
+    customers = _opts(rel, "customers", order_by="name")
+    materials = _opts(rel, "materials", order_by="material_name", active=True)
+    products = _opts(rel, "products", order_by="product_name")
+    variants = _opts(rel, "product_variants", order_by="variant_name")
+    decorations = _opts(rel, "decorations", order_by="decoration_name", active=True)
+    units = _opts(rel, "units", order_by="unit_code")
+
+    if request.method == "POST":
+        data, errors = _collect_quotation()
+        if not errors:
+            rel.table("quotations").update(qid, {
+                "customer_id": data["customer_id"],
+                "quotation_date": data["quotation_date"],
+                "valid_until": data["valid_until"],
+                "subtotal": data["subtotal"],
+                "discount": data["discount"],
+                "tax": data["tax"],
+                "total": data["total"],
+                "notes": data["notes"],
+                "status": "draft",
+            })
+            # Replace line items (delete all for this quote, re-insert from form).
+            for it in rel.table("quotation_items").find(quotation_id=qid):
+                rel.table("quotation_items").delete(it["quotation_item_id"])
+            for it in data["items"]:
+                rel.table("quotation_items").insert({
+                    "quotation_id": qid,
+                    "product_id": it["product_id"],
+                    "variant_id": it["variant_id"],
+                    "material_id": it["material_id"],
+                    "decoration_id": it["decoration_id"],
+                    "specification": it["specification"],
+                    "quantity": it["quantity"],
+                    "unit_id": it["unit_id"],
+                    "unit_price": it["unit_price"],
+                    "subtotal": it["subtotal"],
+                })
+            audit(g.current_user["user_id"], "UPDATE", "quotation", entity_id=qid,
+                  old_value={"status": q["status"], "total": q["total"]},
+                  new_value={"status": "draft", "total": data["total"]})
+            flash(f"Quotation {q['quotation_number']} updated.", "success")
+            return redirect(url_for("quotations.detail", qid=qid))
+        for e in errors:
+            flash(e, "danger")
+
+    # GET (or failed POST): prefill the shared form with the existing quote.
+    # On a failed POST we keep the user's submitted values so nothing is lost.
+    if request.method == "POST":
+        prefill_form = dict(request.form)
+        names = request.form.getlist("item_product[]")
+        mats = request.form.getlist("item_material[]")
+        decos = request.form.getlist("item_decoration[]")
+        qtys = request.form.getlist("item_qty[]")
+        units = request.form.getlist("item_unit[]")
+        prices = request.form.getlist("item_price[]")
+        edit_items = []
+        for i in range(len(names)):
+            edit_items.append({
+                "product_id": names[i] if i < len(names) else None,
+                "variant_id": None,
+                "material_id": mats[i] if i < len(mats) else None,
+                "decoration_id": decos[i] if i < len(decos) else None,
+                "quantity": qtys[i] if i < len(qtys) else None,
+                "unit_id": units[i] if i < len(units) else None,
+                "unit_price": prices[i] if i < len(prices) else None,
+                "specification": None,
+            })
+    else:
+        prefill_form = {
+            "customer_id": q.get("customer_id"),
+            "quotation_date": q.get("quotation_date"),
+            "valid_until": q.get("valid_until"),
+            "discount": q.get("discount"),
+            "tax": q.get("tax"),
+            "notes": q.get("notes"),
+        }
+        edit_items = []
+        for qi in sorted(rel.table("quotation_items").find(quotation_id=qid),
+                         key=lambda r: _num(r.get("quotation_item_id"))):
+            edit_items.append({
+                "product_id": qi.get("product_id"),
+                "variant_id": qi.get("variant_id"),
+                "material_id": qi.get("material_id"),
+                "decoration_id": qi.get("decoration_id"),
+                "quantity": qi.get("quantity"),
+                "unit_id": qi.get("unit_id"),
+                "unit_price": qi.get("unit_price"),
+                "specification": qi.get("specification"),
+            })
+    return render_template("quotation_form.html", customers=customers, materials=materials,
+                           products=products, variants=variants, decorations=decorations,
+                           units=units, modes=QUO_STATUSES, form=prefill_form, q=q,
+                           edit_items=edit_items, is_edit=True)
+
 @QUOTE_BP.route("/<int:qid>/status", methods=["POST"])
 @require_permission("quotation.update")
 def set_status(qid):
