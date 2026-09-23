@@ -340,7 +340,7 @@ def template_new():
             flash(f"Workflow template '{name}' created.", "success")
             return redirect(url_for("production.template_edit", tid=tid))
     return render_template("workflow_template_form.html", category_options=categories,
-                           t=None, steps=[], form=dict(request.form))
+                           t=None, steps=[], form=request.form)
 
 
 @PROD_BP.route("/templates/<int:tid>/edit", methods=["GET", "POST"])
@@ -380,7 +380,7 @@ def template_edit(tid):
             flash(f"Workflow template '{name}' updated.", "success")
             return redirect(url_for("production.template_list"))
     return render_template("workflow_template_form.html", category_options=categories,
-                           t=t, steps=steps, form=dict(request.form))
+                           t=t, steps=steps, form=request.form)
 
 
 def _save_steps(tid, req):

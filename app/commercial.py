@@ -217,7 +217,7 @@ def _order_item_description(rel, oi):
 def _opts(rel, table, order_by=None, active=False):
     """SELECT * FROM <table> [WHERE status='active'] ORDER BY <order_by> (in Python)."""
     t = rel.table(table)
-    rows = list(t.read_all())
+    rows = t.read_all()
     if active:
         rows = [r for r in rows if r.get("status") == "active"]
     if order_by:

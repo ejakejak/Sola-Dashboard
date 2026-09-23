@@ -50,8 +50,10 @@ def _storage():
 
 def _rel():
     from app.sheetdb import SheetRelational
-
-    return SheetRelational(_storage())
+    eng = SheetRelational(_storage())
+    for name, cols in _TABLES.items():
+        eng.define(name, cols, cols[0])
+    return eng
 
 
 # Exact per-table column orders from .planning/2026-09-23-sheetcutover/column_map.txt.
