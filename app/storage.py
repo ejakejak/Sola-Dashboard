@@ -18,10 +18,54 @@ from __future__ import annotations
 
 import abc
 import os
+import random
 import time
 
 from .db import audit as _audit
 from .db import get_db
+
+
+def _transient(exc: Exception) -> bool:
+    """True when ``exc`` is a transient Google-API/network failure worth retrying.
+
+    Retried: HTTP-level transport errors (connection refused, timeout, 5xx from
+    requests), built-in connection/timeout errors, and gspread's ``APIError``
+    carrying an HTTP 429 (rate-limit) or 5xx status. Everything else — not-found,
+    auth failures, logic errors — is left to surface immediately.
+    """
+    import requests
+
+    if isinstance(exc, (requests.exceptions.RequestException, TimeoutError, ConnectionError)):
+        return True
+    try:
+        from gspread.exceptions import APIError
+    except Exception:  # pragma: no cover - gspread always present on the sheets path
+        APIError = ()
+    if isinstance(exc, APIError):
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        return isinstance(status, int) and (status == 429 or status >= 500)
+    return False
+
+
+def _retry(fn, *args, attempts: int = 5, base: float = 0.5, factor: float = 2.0,
+           jitter: float = 0.3, **kwargs):
+    """Call ``fn(*args, **kwargs)`` retrying transient failures.
+
+    Exponential backoff with random jitter: 0.5s, 1s, 2s, 4s + jitter. Non-transient
+    errors (and the final attempt) propagate immediately so nothing is silently
+    swallowed. Stdlib-only (``time`` + ``random``); no new dependencies.
+    """
+    last = None
+    for attempt in range(attempts):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as exc:  # noqa: BLE001 - transient classification below
+            if not _transient(exc) or attempt == attempts - 1:
+                raise
+            last = exc
+            delay = base * (factor ** attempt) + (jitter * random.random())
+            time.sleep(delay)
+    raise last  # pragma: no cover - unreachable when attempts >= 1
 
 
 class Storage(abc.ABC):
@@ -185,6 +229,12 @@ class SheetsStorage(Storage):
         self._tab_cache: list[str] | None = None
         self._ws_cache: dict | None = None
         self._value_cache: dict[str, tuple] = {}
+        self._first_cell_cache: dict[str, tuple] = {}
+        # Tab names whose header was validated this instance (monotonic time of
+        # check). Used by app/commercial._ensure_tab_headers as a cheap guard so
+        # the serverless request path does not re-read every header on each
+        # request — we re-verify at most once per window.
+        self._header_verified: dict[str, float] = {}
 
     @property
     def already_configured(self) -> bool:
@@ -214,7 +264,7 @@ class SheetsStorage(Storage):
             gc = gspread.service_account_from_dict(_json.loads(cred))
         else:
             gc = gspread.service_account(filename=cred)
-        sh = gc.open_by_key(self.spreadsheet_id)
+        sh = _retry(gc.open_by_key, self.spreadsheet_id)
         self._client = gc
         self._spreadsheet = sh
         return gc, sh
@@ -231,10 +281,10 @@ class SheetsStorage(Storage):
         """Return a cached gspread Worksheet object (no metadata re-fetch)."""
         _, sh = self.connect()
         if self._ws_cache is None:
-            self._ws_cache = {ws.title: ws for ws in sh.worksheets()}
+            self._ws_cache = {ws.title: ws for ws in _retry(sh.worksheets)}
         ws = self._ws_cache.get(tab)
         if ws is None:
-            ws = sh.worksheet(tab)
+            ws = _retry(sh.worksheet, tab)
             self._ws_cache[tab] = ws
         return ws
 
@@ -243,26 +293,41 @@ class SheetsStorage(Storage):
         hit = self._value_cache.get(tab)
         if hit and (now - hit[0]) < self._READ_TTL:
             return hit[1]
-        rows = self._worksheet(tab).get_all_values(
-            value_render_option="UNFORMATTED_VALUE")
+        rows = _retry(self._worksheet(tab).get_all_values,
+                      value_render_option="UNFORMATTED_VALUE")
         self._value_cache[tab] = (now, rows)
         return rows
 
     def _invalidate(self, tab: str) -> None:
         self._value_cache.pop(tab, None)
+        self._first_cell_cache.pop(tab, None)
+
+    def first_cell(self, tab: str):
+        """Value of the tab's A1 cell (cheap single-cell read, ~10s cached).
+
+        Used as a low-cost header-present guard so tab-header validation does
+        not need to pull the full grid on every request.
+        """
+        now = time.monotonic()
+        hit = self._first_cell_cache.get(tab)
+        if hit and (now - hit[0]) < self._READ_TTL:
+            return hit[1]
+        val = _retry(self._worksheet(tab).acell, "A1").value
+        self._first_cell_cache[tab] = (now, val)
+        return val
 
     def tabs(self) -> list[str]:
         """Exact tab titles in the live workbook (authoritative), cached per
         connect() to avoid hammering the read-request quota (60/min/user)."""
         _, sh = self.connect()
         if self._tab_cache is None:
-            self._tab_cache = [ws.title for ws in sh.worksheets()]
+            self._tab_cache = [ws.title for ws in _retry(sh.worksheets)]
         return list(self._tab_cache)
 
     def refresh_tabs(self) -> list[str]:
         """Force a fresh tab list (after creating/removing tabs)."""
         _, sh = self.connect()
-        self._tab_cache = [ws.title for ws in sh.worksheets()]
+        self._tab_cache = [ws.title for ws in _retry(sh.worksheets)]
         return list(self._tab_cache)
 
     def header_row(self, tab: str) -> list[str]:
@@ -275,8 +340,8 @@ class SheetsStorage(Storage):
         if value_render_option != "UNFORMATTED_VALUE":
             # non-default render: bypass cache (rare)
             _, sh = self.connect()
-            rows = sh.worksheet(tab).get_all_values(
-                value_render_option=value_render_option)
+            rows = _retry(sh.worksheet(tab).get_all_values,
+                         value_render_option=value_render_option)
             return rows[1:] if (header and rows) else rows
         rows = self._read_cached(tab)
         if header and rows:
@@ -301,15 +366,27 @@ class SheetsStorage(Storage):
         numbers (RAW input) — gspread 6.2.1 mis-serializes USER_ENTERED here."""
         _, sh = self.connect()
         ws = sh.worksheet(tab)
-        ws.append_rows(rows)
+        _retry(ws.append_rows, rows)
+        self._invalidate(tab)
+
+    def prepend_header(self, tab: str, header: list) -> None:
+        """Insert ``header`` as the new first row, shifting existing rows down.
+
+        Used to repair a tab whose header row is lost or has data leaked into
+        row 1 — the canonical header is inserted at position 1 WITHOUT dropping
+        any data. Idempotent callers only invoke this when the header is broken.
+        """
+        _, sh = self.connect()
+        ws = sh.worksheet(tab)
+        _retry(ws.insert_row, header, 1)
         self._invalidate(tab)
 
     def add_tab(self, title: str, header_row: list | None = None) -> None:
         """Create a new tab if it does not exist; optionally write a header row."""
         _, sh = self.connect()
         if title not in self.tabs():
-            sh.add_worksheet(title=title, rows=1,
-                             cols=max(len(header_row), 1) if header_row else 1)
+            _retry(sh.add_worksheet, title=title, rows=1,
+                   cols=max(len(header_row), 1) if header_row else 1)
             self.refresh_tabs()
         if header_row:
             self.append_rows(title, [header_row])
@@ -318,14 +395,14 @@ class SheetsStorage(Storage):
         """Write a single cell (row/col are 1-indexed, matching Sheets)."""
         _, sh = self.connect()
         ws = sh.worksheet(tab)
-        ws.update_cell(row, col, value)
+        _retry(ws.update_cell, row, col, value)
         self._invalidate(tab)
 
     def clear_tab(self, tab: str):
         """Clear all content in a tab (headers gone too — caller refill)."""
         _, sh = self.connect()
         ws = sh.worksheet(tab)
-        ws.clear()
+        _retry(ws.clear)
         self._invalidate(tab)
 
     # -- inherited SQL-shaped surface (not applicable to a sheet) ----------

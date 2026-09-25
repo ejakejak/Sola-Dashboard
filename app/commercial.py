@@ -18,6 +18,8 @@ Business rules enforced here (backend):
 - Every write (create/status/convert/invoice/payment) is audited via audit().
 """
 from datetime import date, datetime, timedelta, timezone
+import logging
+import time
 
 from flask import (
     Blueprint,
@@ -31,6 +33,8 @@ from flask import (
     send_file,
     url_for,
 )
+
+_logger = logging.getLogger(__name__)
 
 from .auth import require_permission
 from .invoice_pdf import render_invoice_pdf
@@ -80,12 +84,59 @@ def _storage():
     return current_app.extensions["storage"]
 
 
+# Re-verify a tab's header at most once per this many seconds (per warm instance)
+# so the serverless request path stays cheap while still catching a header that
+# is lost/broken later during a long-lived process.
+_HEADER_RECHECK_SECS = 300.0
+
+
+def _ensure_tab_headers(eng) -> None:
+    """Validate every _TABLES tab's header row and repair a missing/broken one.
+
+    Prevents the production bug where a tab (e.g. ``quotations``) lost its header
+    row: ``read_tab(header=True)`` then swallowed the first record as the header
+    (0 rows shown) and the next insert risked a duplicate pk.
+
+    How it works / why it is safe:
+      * Cheap guard first: read only cell A1 (cached ~10s by SheetsStorage) and
+        compare it to the expected primary-key column. If it already matches, the
+        header is present — do nothing (idempotent, zero network on the common
+        path once verified this instance).
+      * Only when A1 differs does a repair run: the canonical header row is
+        inserted at position 1 in the sheet, shifting existing rows DOWN — no
+        data is dropped.
+      * Per-tab checks are gated by an in-instance ``_HEADER_RECHECK_SECS`` window
+        so the check is not repeated on every request.
+      * Every failure is logged and swallowed: a validation problem can never
+        take down the app or block a request.
+    """
+    store = eng.sheets
+    now = time.monotonic()
+    for name, cols in _TABLES.items():
+        pk = cols[0]
+        last = (store._header_verified or {}).get(name)
+        if last is not None and (now - last) < _HEADER_RECHECK_SECS:
+            continue  # verified recently; keep the request path stateless
+        try:
+            first = store.first_cell(name)
+            if first is not None and str(first).strip().lower() == str(pk).strip().lower():
+                store._header_verified[name] = now  # header already correct
+                continue
+            # Header missing or data leaked into row 1 -> insert canonical header.
+            store.prepend_header(name, cols)
+            store._header_verified[name] = now
+        except Exception:
+            _logger.exception(
+                "tab-header self-repair skipped for %s (non-fatal)", name)
+
+
 def _rel():
     """Build a SheetRelational engine over the app's sheet storage (all tables defined)."""
     from app.sheetdb import SheetRelational
     eng = SheetRelational(_storage())
     for name, cols in _TABLES.items():
         eng.define(name, cols, cols[0])
+    _ensure_tab_headers(eng)
     return eng
 
 
@@ -107,6 +158,24 @@ def audit(user_id, action, entity, entity_id=None, old_value=None, new_value=Non
 QUOTE_BP = Blueprint("quotations", __name__, url_prefix="/quotations")
 ORDER_BP = Blueprint("orders", __name__, url_prefix="/orders")
 INVOICE_BP = Blueprint("invoices", __name__, url_prefix="/invoices")
+
+
+def _register_unexpected_handler(bp):
+    """Surface a friendly flash instead of a raw gateway/crash on unexpected
+    exceptions (e.g. the transient Google-Sheets 429/5xx that bypass the retry),
+    while ALWAYS logging the real error so it is not silently swallowed."""
+
+    @bp.errorhandler(Exception)
+    def _unexpected(exc):
+        _logger.exception("unhandled error in commercial route: %s", exc)
+        flash("A temporary error occurred. Please try again.", "danger")
+        # host_url is always absolute, so redirect() uses it directly (never a
+        # url_for BuildError) and lands on the app root / homepage by default.
+        return redirect(request.referrer or request.host_url), 302
+
+
+for _bp in (QUOTE_BP, ORDER_BP, INVOICE_BP):
+    _register_unexpected_handler(_bp)
 
 QUO_STATUSES = ["draft", "sent", "approved", "rejected", "converted", "cancelled"]
 ORD_STATUSES = ["pending", "confirmed", "in_production", "completed", "cancelled"]

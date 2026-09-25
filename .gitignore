@@ -28,3 +28,9 @@ migrations/migration_report.json
 Thumbs.db
 .vercel
 .env*
+
+# dev artifacts (local audit/QC, screenshots, planning, junk staging)
+_qc/
+_shots/
+.planning/
+login_probe.html
