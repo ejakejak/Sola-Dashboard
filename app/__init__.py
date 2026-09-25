@@ -86,6 +86,13 @@ def create_app(test_config: dict | None = None) -> Flask:
     def forbidden(_err):
         return render_template("403.html"), 403
 
+    # App-wide graceful handling of transient Google-Sheets / network failures
+    # (production, masterdata, inventory, track blueprints + dashboard "/").
+    # Non-transient bugs still surface as real HTTP 500. See app/errors.py.
+    from .errors import register_graceful_error_handlers
+
+    register_graceful_error_handlers(app)
+
     @app.errorhandler(404)
     def not_found(_err):
         return render_template("404.html"), 404
