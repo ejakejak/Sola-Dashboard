@@ -113,6 +113,9 @@ class TestSqliteStorage(unittest.TestCase):
             "TESTING": True,
             "DATABASE_PATH": self.db_path,
             "SECRET_KEY": "phase1-secret",
+            # These tests exercise the SqliteStorage seam; pin the backend so the
+            # app does not resolve the machine default ("sheets").
+            "STORAGE": "sqlite",
         })
         self.storage = self.app.extensions["storage"]
 
@@ -191,11 +194,27 @@ class TestAppBootStorage(unittest.TestCase):
             cfg["STORAGE"] = storage
         return tmp, create_app(cfg)
 
-    def test_14_app_boots_with_storage_unset_default_sqlite(self):
+    def test_14_app_boots_with_storage_unset_defaults_to_sheets(self):
+        # CONTRACT UPDATE (2026-10-03): the Phase-5 cutover made the Google Sheet
+        # the single live store, so app/config.py now defaults STORAGE to "sheets".
+        # This test used to assert the old sqlite default. It now asserts the
+        # shipped default, and test_14b keeps the sqlite-selection coverage that
+        # would otherwise be lost.
         tmp, app = self._mkapp()
         try:
-            self.assertIsInstance(app.extensions["storage"], SqliteStorage)
+            self.assertIsInstance(app.extensions["storage"], SheetsStorage)
             # a request still works -> no regression
+            r = app.test_client().get("/", follow_redirects=False)
+            self.assertIn(r.status_code, (200, 302))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_14b_app_boots_with_storage_explicitly_sqlite(self):
+        # Explicit STORAGE="sqlite" must still select the legacy SqliteStorage,
+        # so an operator can pin the backend regardless of the changed default.
+        tmp, app = self._mkapp("sqlite")
+        try:
+            self.assertIsInstance(app.extensions["storage"], SqliteStorage)
             r = app.test_client().get("/", follow_redirects=False)
             self.assertIn(r.status_code, (200, 302))
         finally:

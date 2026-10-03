@@ -129,6 +129,288 @@ class Storage(abc.ABC):
         """Record a consequential action to the audit log (spec 27)."""
 
 
+def _col_type_group(decl: str) -> str:
+    """Bucket a declared SQLite column type into int / float / text."""
+    d = (decl or "").upper()
+    if "INT" in d:
+        return "int"
+    if any(k in d for k in ("REAL", "FLOA", "DOUB", "NUM", "DEC")):
+        return "float"
+    return "text"
+
+
+_ZERO_BY_GROUP = {"int": 0, "float": 0.0, "text": ""}
+
+
+class _Omit:
+    """Sentinel: omit this column from the INSERT so its DEFAULT applies."""
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:  # pragma: no cover - debugging aid
+        return "<OMIT>"
+
+
+_OMIT = _Omit()
+
+
+class _SqliteWorksheet:
+    """Minimal gspread-shaped worksheet so ``sheetdb`` takes its targeted
+    ``delete_rows`` path instead of rewriting the whole tab.
+
+    Only the one attribute ``SheetRelation._delete_row`` looks for is
+    implemented; it is addressed by 0-based row index with the header at 0,
+    exactly like gspread.
+    """
+
+    def __init__(self, adapter: "SqliteTabAdapter", tab: str):
+        self._adapter = adapter
+        self._tab = tab
+
+    def delete_rows(self, row_index: int) -> None:
+        """Delete the sheet row at 0-based ``row_index`` (header occupies 0)."""
+        self._adapter._delete_data_row(self._tab, row_index - 1)
+
+
+class _SqliteSpreadsheet:
+    """gspread-shaped spreadsheet facade (``worksheet(title)`` only)."""
+
+    def __init__(self, adapter: "SqliteTabAdapter"):
+        self._adapter = adapter
+
+    def worksheet(self, title: str) -> _SqliteWorksheet:
+        return _SqliteWorksheet(self._adapter, title)
+
+
+class SqliteTabAdapter:
+    """Google-Sheets-shaped TAB interface over the existing SQLite tables.
+
+    ``app.sheetdb.SheetRelational`` is the app's only real data path and it
+    talks exclusively to a TAB interface (``read_tab`` / ``append_rows`` /
+    ``tabs`` / ``header_row`` / ``clear_tab`` / ``update_cell`` /
+    ``_invalidate``). This adapter gives the legacy ``SqliteStorage`` backend
+    exactly that surface, so ``STORAGE=sqlite`` is a working offline/test
+    backend instead of a hard 500. The production Google-Sheets path
+    (``STORAGE=sheets`` -> ``SheetsStorage``) is untouched.
+
+    The translation of "tab" onto "table" is:
+
+      * the SCHEMA is the header row — ``header_row()`` is the table's column
+        names in declared order, and ``read_tab(header=False)`` prepends them
+        virtually so callers that reason about sheet row 1 == header (and
+        ``idx + 2``) behave identically;
+      * the BODY is the table's rows, ordered by rowid (SQLite's insertion
+        order, which is what a sheet append preserves);
+      * a tab's data is thus never stored as a header row, so
+        ``read_tab(header=True)`` returns every row and
+        ``read_tab(header=False)`` returns ``[header] + rows``.
+
+    Values are translated with the same conventions as
+    ``app.sheetdb._cell_encode`` / ``_cell_decode``: an empty cell means NULL
+    on write and ``""`` on read, numbers stay numeric, and dict/list columns
+    stay JSON text. Writes commit immediately (a sheet write is durable the
+    moment the API call returns) because ``app.db.close_db`` closes the
+    connection without committing.
+    """
+
+    def __init__(self, storage: "SqliteStorage"):
+        self._storage = storage
+        # commercial._ensure_tab_headers persists its verification window here,
+        # mirroring SheetsStorage's per-instance state.
+        self._header_verified: dict[str, float] = {}
+
+    # -- connection -------------------------------------------------------
+    def _db(self):
+        return self._storage._db()
+
+    @staticmethod
+    def _quote(identifier: str) -> str:
+        return '"' + str(identifier).replace('"', '""') + '"'
+
+    def _require_table(self, tab: str) -> None:
+        row = self._db().execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+            (tab,)).fetchone()
+        if row is None:
+            raise RuntimeError(
+                f"sqlite tab '{tab}' does not exist; create the table first "
+                "(db/schema.sql + db.init_schema.create_schema)")
+
+    def _table_info(self, tab: str) -> list[tuple]:
+        """[(name, declared_type, notnull, has_default)] in declared order."""
+        self._require_table(tab)
+        rows = self._db().execute(
+            f"PRAGMA table_info({self._quote(tab)})").fetchall()
+        return [(r[1], r[2], bool(r[3]), r[4] is not None) for r in rows]
+
+    # -- sheetdb tab interface --------------------------------------------
+    def tabs(self) -> list[str]:
+        return [r[0] for r in self._db().execute(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name NOT LIKE 'sqlite_%' ORDER BY rowid").fetchall()]
+
+    def refresh_tabs(self) -> list[str]:
+        return self.tabs()
+
+    def header_row(self, tab: str) -> list[str]:
+        return [c[0] for c in self._table_info(tab)]
+
+    def read_tab(self, tab: str, header: bool = True,
+                 value_render_option="UNFORMATTED_VALUE") -> list[list]:
+        cols = self.header_row(tab)
+        if not cols:
+            return []
+        sel = ", ".join(self._quote(c) for c in cols)
+        rows = self._db().execute(
+            f"SELECT {sel} FROM {self._quote(tab)} ORDER BY rowid").fetchall()
+        grid = [[("" if v is None else v) for v in r] for r in rows]
+        if header:
+            return grid
+        return [list(cols)] + grid
+
+    def append_rows(self, tab: str, rows: list[list]) -> None:
+        info = self._table_info(tab)
+        db = self._db()
+        for row in rows:
+            cols, values = [], []
+            for i, (cname, decl, notnull, has_default) in enumerate(info):
+                raw = row[i] if i < len(row) else None
+                value = self._to_db(raw, decl, notnull, has_default)
+                if value is _OMIT:
+                    continue  # let the column's DEFAULT apply, as SQL would
+                cols.append(cname)
+                values.append(value)
+            if not cols:
+                continue
+            placeholders = ", ".join("?" * len(cols))
+            quoted = ", ".join(self._quote(c) for c in cols)
+            db.execute(
+                f"INSERT INTO {self._quote(tab)} ({quoted}) "
+                f"VALUES ({placeholders})", values)
+        db.commit()
+
+    def update_cell(self, tab: str, row: int, col: int, value) -> None:
+        """Update one cell. ``row`` is 1-based INCLUDING the header (row 1),
+        ``col`` is 1-based — matching ``SheetRelation.update``'s ``idx + 2``."""
+        info = self._table_info(tab)
+        if col < 1 or col > len(info):
+            raise IndexError(
+                f"column {col} out of range for sqlite tab '{tab}' "
+                f"({len(info)} columns)")
+        if row < 2:
+            return  # row 1 is the header, which here is the schema itself
+        cname, decl, notnull, has_default = info[col - 1]
+        db = self._db()
+        target = db.execute(
+            f"SELECT rowid FROM {self._quote(tab)} ORDER BY rowid "
+            "LIMIT 1 OFFSET ?", (row - 2,)).fetchone()
+        if target is None:
+            return  # no such sheet row
+        db.execute(
+            f"UPDATE {self._quote(tab)} SET {self._quote(cname)}=? WHERE rowid=?",
+            (self._to_db(value, decl, notnull, has_default), target[0]))
+        db.commit()
+
+    def clear_tab(self, tab: str) -> None:
+        """Delete every row but keep the schema (the tab's header row)."""
+        self._require_table(tab)
+        db = self._db()
+        db.execute(f"DELETE FROM {self._quote(tab)}")
+        db.commit()
+
+    def first_cell(self, tab: str):
+        """A1 of the tab. The header lives in the schema, so this is the first
+        column name — which is what ``_ensure_tab_headers`` compares against."""
+        cols = self.header_row(tab)
+        return cols[0] if cols else None
+
+    def prepend_header(self, tab: str, header: list) -> None:
+        """No-op: this backend's header row IS the table schema, so a header
+        can never go missing (and never needs shifting rows down)."""
+        return None
+
+    def add_tab(self, title: str, header_row: list | None = None) -> None:
+        """Create the table backing ``title`` (idempotent), typed TEXT."""
+        cols = list(header_row or [])
+        if not cols:
+            cols = ["value"]
+        existing = {c[0] for c in self._table_info(title)} if self._table_exists(title) else set()
+        adds = [c for c in cols if c not in existing]
+        if adds:
+            quoted = ", ".join(
+                f"{self._quote(c)} TEXT" for c in adds)
+            self._db().execute(
+                f"CREATE TABLE IF NOT EXISTS {self._quote(title)} ({quoted})")
+            self._db().commit()
+
+    def find_tab_by_header(self, expected: list[str]) -> str | None:
+        want = list(expected)
+        for tab in self.tabs():
+            try:
+                if self.header_row(tab) == want:
+                    return tab
+            except Exception:
+                continue
+        return None
+
+    def _invalidate(self, tab: str | None = None) -> None:
+        """No-op: SQLite reads are not cached, so there is nothing to drop."""
+        return None
+
+    # -- internals --------------------------------------------------------
+    def _table_exists(self, tab: str) -> bool:
+        return self._db().execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+            (tab,)).fetchone() is not None
+
+    def _delete_data_row(self, tab: str, data_index: int) -> None:
+        """Delete the ``data_index``-th (0-based) data row of the tab."""
+        if data_index < 0:
+            return  # the header row: it is the schema, not a stored row
+        db = self._db()
+        target = db.execute(
+            f"SELECT rowid FROM {self._quote(tab)} ORDER BY rowid "
+            "LIMIT 1 OFFSET ?", (data_index,)).fetchone()
+        if target is None:
+            return
+        db.execute(f"DELETE FROM {self._quote(tab)} WHERE rowid=?", (target[0],))
+        db.commit()
+
+    @staticmethod
+    def _to_db(value, decl: str, notnull: bool, has_default: bool):
+        """Translate one sheet cell value into a SQLite bind parameter.
+
+        Mirrors ``sheetdb._cell_encode``: ``None``/``""`` means "empty cell".
+        An empty cell on a NOT NULL column with a DEFAULT is omitted so the
+        default applies (exactly what the pre-cutover SQL relied on); on a
+        NOT NULL column with no default it becomes the type's zero value,
+        since NULL is not storable there at all.
+        """
+        if value is None or value == "":
+            if notnull:
+                if has_default:
+                    return _OMIT
+                return _ZERO_BY_GROUP[_col_type_group(decl)]
+            return None
+        group = _col_type_group(decl)
+        # sheetdb encodes bools as the strings "true"/"false"; SQLite's
+        # numeric columns cannot hold them, so restore 1/0.
+        if group in ("int", "float") and value in ("true", "false"):
+            return 1 if value == "true" else 0
+        return value
+
+    # -- gspread-shaped helpers used by sheetdb -----------------------------
+    def connect(self):
+        """gspread-shaped ``(client, spreadsheet)`` pair so
+        ``SheetRelation._delete_row`` performs a targeted row delete instead
+        of the destructive clear-and-rewrite fallback."""
+        return self, _SqliteSpreadsheet(self)
+
+    @property
+    def already_configured(self) -> bool:
+        return True
+
+
 class SqliteStorage(Storage):
     """Delegates to the existing per-request ``app/db.get_db()`` connection.
 
@@ -136,6 +418,11 @@ class SqliteStorage(Storage):
     required), so it is safe to build during ``create_app``. All methods must
     be called inside a Flask app context, matching how the blueprints use
     ``get_db()`` today.
+
+    Besides the SQL surface, it now also exposes ``.sheets`` — a
+    ``SqliteTabAdapter`` giving it the Google-Sheets-shaped tab interface
+    that ``app.sheetdb.SheetRelational`` speaks, so ``STORAGE=sqlite`` is a
+    usable offline/test backend.
     """
 
     name = "sqlite"
@@ -144,6 +431,71 @@ class SqliteStorage(Storage):
     @staticmethod
     def _db():
         return get_db()
+
+    def __init__(self):
+        # Built eagerly but never touches the DB; kept on the instance so
+        # commercial's _header_verified window survives across requests.
+        self._tab_adapter = SqliteTabAdapter(self)
+
+    # -- Google-Sheets-shaped tab interface (see SqliteTabAdapter) --------
+    # ``SheetRelational`` stores this storage as ``store.sheets``, so — exactly
+    # like SheetsStorage — SqliteStorage *is* the tab interface. These are thin
+    # delegations to SqliteTabAdapter, which holds the real implementation.
+    @property
+    def sheets(self) -> "SqliteStorage":
+        """Self: the tab interface is this object (SheetRelational does
+        ``store.sheets``). Returned for callers that reach through it."""
+        return self
+
+    @property
+    def _header_verified(self) -> dict:
+        return self._tab_adapter._header_verified
+
+    @property
+    def already_configured(self) -> bool:
+        return True
+
+    def tabs(self) -> list[str]:
+        return self._tab_adapter.tabs()
+
+    def refresh_tabs(self) -> list[str]:
+        return self._tab_adapter.refresh_tabs()
+
+    def header_row(self, tab: str) -> list[str]:
+        return self._tab_adapter.header_row(tab)
+
+    def read_tab(self, tab: str, header: bool = True,
+                 value_render_option="UNFORMATTED_VALUE") -> list[list]:
+        return self._tab_adapter.read_tab(
+            tab, header=header, value_render_option=value_render_option)
+
+    def append_rows(self, tab: str, rows: list[list]) -> None:
+        self._tab_adapter.append_rows(tab, rows)
+
+    def update_cell(self, tab: str, row: int, col: int, value) -> None:
+        self._tab_adapter.update_cell(tab, row, col, value)
+
+    def clear_tab(self, tab: str) -> None:
+        self._tab_adapter.clear_tab(tab)
+
+    def first_cell(self, tab: str):
+        return self._tab_adapter.first_cell(tab)
+
+    def prepend_header(self, tab: str, header: list) -> None:
+        self._tab_adapter.prepend_header(tab, header)
+
+    def add_tab(self, title: str, header_row: list | None = None) -> None:
+        self._tab_adapter.add_tab(title, header_row)
+
+    def find_tab_by_header(self, expected: list[str]) -> str | None:
+        return self._tab_adapter.find_tab_by_header(expected)
+
+    def connect(self):
+        return self._tab_adapter.connect()
+
+    def _invalidate(self, tab: str | None = None) -> None:
+        self._tab_adapter._invalidate(tab)
+
 
     # -- interface -------------------------------------------------------
     def connection(self):
@@ -445,6 +797,133 @@ class SheetsStorage(Storage):
         self._raise_sql_shaped("audit")
 
 
+class LocalSheetStorage(Storage):
+    """In-memory tab store satisfying the sheetdb interface, for running the
+    app's sheet-backed blueprints (auth / masterdata / inventory / commercial)
+    fully OFFLINE with no Google credentials.
+
+    This is a thin local implementation of the handful of sheet-ish operations
+    that ``app.sheetdb.SheetRelational`` and ``app.commercial`` rely on
+    (``read_tab`` / ``append_rows`` / ``clear_tab`` / ``prepend_header`` /
+    ``first_cell`` / ``tabs`` / ``update_cell``). It deliberately does NOT
+    replicate gspread; rows are just native Python lists so the whole HTTP flow
+    can run as a fast unit test. Select with ``STORAGE=local`` / ``sqlish`` /
+    ``offline``.
+
+    Semantics mirror the live Google Sheet so the caller's column model and the
+    ``_ensure_tab_headers`` self-repair behave identically:
+      * row 0 of a tab is always the header row; ``read_tab(header=True)``
+        returns rows 1..n (pure data), ``header=False`` returns all rows.
+      * ``append_rows`` appends data rows (creating the tab if absent).
+      * ``first_cell`` returns A1 (None if the tab is empty).
+    """
+
+    name = "local"
+
+    def __init__(self):
+        # tab -> list[list]; row 0 is the header when present.
+        self._rows: dict[str, list[list]] = {}
+        self._header_verified: dict[str, float] = {}
+
+    def already_configured(self) -> bool:
+        return True
+
+    # -- sheetdb tab interface ----------------------------------------------
+    def tabs(self) -> list[str]:
+        return list(self._rows.keys())
+
+    def refresh_tabs(self) -> list[str]:
+        return self.tabs()
+
+    def header_row(self, tab: str) -> list[str]:
+        rows = self._rows.get(tab, [])
+        return list(rows[0]) if rows else []
+
+    def read_tab(self, tab: str, header: bool = True, value_render_option="UNFORMATTED_VALUE") -> list[list]:
+        rows = self._rows.get(tab, [])
+        if header and rows:
+            return [list(r) for r in rows[1:]]
+        return [list(r) for r in rows]
+
+    def append_rows(self, tab: str, rows: list[list]) -> None:
+        self._rows.setdefault(tab, []).extend([list(r) for r in rows])
+
+    def clear_tab(self, tab: str) -> None:
+        self._rows[tab] = []
+
+    def first_cell(self, tab: str):
+        rows = self._rows.get(tab, [])
+        if not rows or not rows[0]:
+            return None
+        return rows[0][0]
+
+    def prepend_header(self, tab: str, header: list) -> None:
+        """Insert a header row at position 0, shifting existing rows down (safe)."""
+        self._rows.setdefault(tab, []).insert(0, list(header))
+
+    def update_cell(self, tab: str, row: int, col: int, value) -> None:
+        while len(self._rows.setdefault(tab, [])) < row:
+            self._rows[tab].append([])
+        while len(self._rows[tab][row - 1]) < col:
+            self._rows[tab][row - 1].append("")
+        self._rows[tab][row - 1][col - 1] = value
+
+    def add_tab(self, title: str, header_row: list | None = None) -> None:
+        if title not in self._rows:
+            self._rows[title] = []
+        if header_row:
+            self._rows[title].append(list(header_row))
+
+    def find_tab_by_header(self, expected: list[str]) -> str | None:
+        for tab, rows in self._rows.items():
+            if rows and rows[0] == list(expected):
+                return tab
+        return None
+
+    # -- convenience for tests/seeding --------------------------------------
+    def seed(self, tab: str, header: list, rows: list[list] | None = None) -> None:
+        """Replace a tab wholesale with a header + data rows (test helper)."""
+        grid = [list(header)]
+        for r in (rows or []):
+            grid.append(list(r))
+        self._rows[tab] = grid
+
+    # -- inherited SQL-shaped surface (not applicable to a sheet store) -----
+    def connection(self):
+        raise NotImplementedError("LocalSheetStorage has no SQL connection")
+
+    def commit(self) -> None:
+        pass
+
+    def rollback(self) -> None:
+        pass
+
+    def query(self, sql, params=()):
+        raise NotImplementedError("LocalSheetStorage has no SQL surface")
+
+    def execute(self, sql, params=()):
+        raise NotImplementedError("LocalSheetStorage has no SQL surface")
+
+    def fetchone(self, sql, params=()):
+        raise NotImplementedError("LocalSheetStorage has no SQL surface")
+
+    def fetchall(self, sql, params=()):
+        raise NotImplementedError("LocalSheetStorage has no SQL surface")
+
+    def insert(self, sql, params=()):
+        raise NotImplementedError("LocalSheetStorage has no SQL surface")
+
+    def update(self, sql, params=()):
+        raise NotImplementedError("LocalSheetStorage has no SQL surface")
+
+    def delete(self, sql, params=()):
+        raise NotImplementedError("LocalSheetStorage has no SQL surface")
+
+    def audit(self, user_id, action, entity, entity_id=None,
+              old_value=None, new_value=None):
+        raise NotImplementedError("LocalSheetStorage has no SQL audit surface")
+
+
 def get_storage(config):
     """Select the storage backend for the app.
 
@@ -469,5 +948,7 @@ def get_storage(config):
             spreadsheet_id=_get("SPREADSHEET_ID"),
             credentials_path=_get("GOOGLE_APPLICATION_CREDENTIALS"),
         )
+    if storage in ("local", "sqlish", "offline"):
+        return LocalSheetStorage()
     raise ValueError(
-        f"Unknown STORAGE backend: {storage!r} (expected 'sqlite' or 'sheets')")
+        f"Unknown STORAGE backend: {storage!r} (expected 'sqlite', 'sheets', or 'local'/'sqlish'/'offline')")

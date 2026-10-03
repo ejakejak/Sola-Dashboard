@@ -114,7 +114,8 @@ def _future():
 
 
 def _mkapp(db_path):
-    cfg = {"TESTING": True, "DATABASE_PATH": db_path, "SECRET_KEY": "phase8-secret"}
+    cfg = {"TESTING": True, "DATABASE_PATH": db_path, "SECRET_KEY": "phase8-secret",
+           "STORAGE": "sqlite"}
     app = create_app(cfg)
     create_schema(db_path)
     ensure_seeded(db_path)

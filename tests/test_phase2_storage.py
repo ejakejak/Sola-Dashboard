@@ -39,6 +39,9 @@ class TestSqliteConnectionSeam(unittest.TestCase):
             "TESTING": True,
             "DATABASE_PATH": self.db_path,
             "SECRET_KEY": "phase2-secret",
+            # These tests drive raw SQL through the storage seam, so the backend
+            # must be pinned to sqlite; the app default is "sheets" (config.py).
+            "STORAGE": "sqlite",
         })
         self.storage = self.app.extensions["storage"]
         self.assertIsInstance(self.storage, SqliteStorage)
@@ -75,6 +78,9 @@ class TestSqliteTransactionSemantics(unittest.TestCase):
             "TESTING": True,
             "DATABASE_PATH": self.db_path,
             "SECRET_KEY": "phase2-secret",
+            # These tests drive raw SQL through the storage seam, so the backend
+            # must be pinned to sqlite; the app default is "sheets" (config.py).
+            "STORAGE": "sqlite",
         })
         self.storage = self.app.extensions["storage"]
 

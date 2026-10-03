@@ -483,8 +483,16 @@ def edit(qid):
                 "status": "draft",
             })
             # Replace line items (delete all for this quote, re-insert from form).
-            for it in rel.table("quotation_items").find(quotation_id=qid):
-                rel.table("quotation_items").delete(it["quotation_item_id"])
+            # delete() refuses to act if the row at the computed index is not the
+            # target pk (stale-read guard). Surface that as a user-facing error
+            # instead of a 500, and do NOT half-apply the replacement.
+            try:
+                for it in rel.table("quotation_items").find(quotation_id=qid):
+                    rel.table("quotation_items").delete(it["quotation_item_id"])
+            except RuntimeError as e:
+                flash(f"Could not safely replace line items: {e}. "
+                      f"No changes were saved - please retry.", "danger")
+                return redirect(url_for("quotations.edit", qid=qid))
             for it in data["items"]:
                 rel.table("quotation_items").insert({
                     "quotation_id": qid,
@@ -882,20 +890,49 @@ def create_from_order(oid):
     })
     iid = rec["invoice_id"]
     o_items = rel.table("order_items").find(order_id=oid)
+    # ONE batched append for all line items. A per-item insert() costs one network
+    # round trip each, so a 5-item invoice can time out mid-loop and persist only
+    # some of the rows — with no audit entry, because audit() runs after.
+    item_rows = []
     for oi in o_items:
-        desc = _order_item_description(rel, oi)
-        rel.table("invoice_items").insert({
+        item_rows.append({
             "invoice_id": iid,
             "order_item_id": oi["order_item_id"],
-            "description": desc,
+            "description": _order_item_description(rel, oi),
             "quantity": oi["quantity"],
             "unit_id": oi["unit_id"],
             "unit_price": oi["unit_price"],
             "subtotal": oi["subtotal"],
         })
+    if item_rows:
+        rel.table("invoice_items").multi_insert(item_rows)
+
+    # Integrity assertions (warn, never abort — a mismatch must be visible
+        # without losing the invoice).
+        #
+        # The line items are PRE-discount line sums, so they must reconcile against
+        # the invoice `subtotal`, NOT against `grand_total` (which is
+        # subtotal - discount + tax). Comparing against grand_total false-fires on
+        # every discounted or taxed order.
+        items_total = round(sum(_num(r.get("subtotal")) for r in item_rows), 2)
+        expected_total = round(float(o["subtotal"] or 0), 2)
+        if item_rows and abs(items_total - expected_total) > 0.01:
+            flash(f"Warning: invoice {num} line items total {items_total} but the "
+                  f"invoice subtotal is {expected_total} — please verify.", "warning")
+        # The header total must itself be internally consistent.
+        recomputed = round(expected_total - _num(o["discount"]) + _num(o["tax"]), 2)
+        if abs(recomputed - grand_total) > 0.01:
+            flash(f"Warning: order {o['order_number']} subtotal/discount/tax do not "
+                  f"reconcile to its grand total ({recomputed} vs {grand_total}).",
+                  "warning")
+        # Every order line item must have produced an invoice line.
+        if len(item_rows) != len(o_items):
+            flash(f"Warning: invoice {num} has {len(item_rows)} of {len(o_items)} "
+                  f"order line items — please verify.", "warning")
+
     audit(g.current_user["user_id"], "CREATE", "invoice", entity_id=iid,
           new_value={"invoice_number": num, "order_id": oid, "grand_total": grand_total,
-                     "outstanding": grand_total})
+                     "outstanding": grand_total, "items": len(item_rows)})
     flash(f"Invoice {num} generated from order {o['order_number']}.", "success")
     return redirect(url_for("invoices.detail", iid=iid))
 

@@ -32,6 +32,8 @@ def _make_app(db_path):
             "TESTING": True,
             "DATABASE_PATH": db_path,
             "SECRET_KEY": "test-secret",
+            # Seeds a real temp SQLite DB, so pin the backend (app default is sheets).
+            "STORAGE": "sqlite",
         }
     )
     create_schema(db_path)

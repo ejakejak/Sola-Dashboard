@@ -48,7 +48,8 @@ CATEGORIES = [
 
 
 def _mkapp(db_path, extra=None):
-    cfg = {"TESTING": True, "DATABASE_PATH": db_path, "SECRET_KEY": "test-secret"}
+    cfg = {"TESTING": True, "DATABASE_PATH": db_path, "SECRET_KEY": "test-secret",
+           "STORAGE": "sqlite"}
     if extra:
         cfg.update(extra)
     app = create_app(cfg)

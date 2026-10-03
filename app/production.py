@@ -369,10 +369,18 @@ def template_edit(tid):
                  "is_default": is_default},
             )
             # full step-set replace (sequence deterministic from the form)
-            for s in _table("production_workflow_template_steps").find(
-                    workflow_template_id=tid):
-                _table("production_workflow_template_steps").delete(
-                    s["workflow_template_step_id"])
+            # delete() refuses to act if the row at the computed index is not the
+            # target pk (stale-read guard). Surface that as a user-facing error
+            # instead of a 500, and do NOT half-apply the replacement.
+            try:
+                for s in _table("production_workflow_template_steps").find(
+                        workflow_template_id=tid):
+                    _table("production_workflow_template_steps").delete(
+                        s["workflow_template_step_id"])
+            except RuntimeError as e:
+                flash(f"Could not safely replace workflow steps: {e}. "
+                      f"No changes were saved - please retry.", "danger")
+                return redirect(url_for("production.template_list"))
             _save_steps(tid, request)
             audit(g.current_user["user_id"], "UPDATE", "workflow_template", entity_id=tid,
                   old_value=old,

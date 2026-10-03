@@ -54,7 +54,12 @@ class RotateScript(unittest.TestCase):
         self._tmp.cleanup()
 
     def _app(self):
-        app = create_app({"TESTING": True, "DATABASE_PATH": self.db})
+        app = create_app({
+            "TESTING": True,
+            "DATABASE_PATH": self.db,
+            # Test operates against the temp SQLite DB it seeded above.
+            "STORAGE": "sqlite",
+        })
         return app.test_client()
 
     def _hash_of(self, username="admin"):

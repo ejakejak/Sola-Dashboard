@@ -62,17 +62,14 @@ class SheetRelation:
     def _rows_with_header(self) -> list[list]:
         return self.store.sheets.read_tab(self.tab, header=False)
 
-    def _write(self, rows: list[list]) -> None:
-        """Replace the whole tab body (after header) with `rows`."""
-        # We clear then write to keep the engine simple and correct under the
-        # full-cutover contract (the sheet is authoritative; no concurrency).
-        self.store.sheets.clear_tab(self.tab)
-        if not rows:
-            self.store.sheets.append_rows(self.tab, [self.columns])
-            return
-        self.store.sheets.append_rows(self.tab, [self.columns] + rows)
+    # NOTE: the old _write() full-tab rewrite (clear_tab + re-append) was removed.
+        # It had zero callers and was the remaining carrier of the destructive
+        # two-step non-atomic overwrite documented in gspread issue #781, which can
+        # lose rows when the read it is based on is stale. Do not reintroduce a
+        # whole-tab rewrite to change one row — use update()/delete(), which are
+        # targeted and guarded.
 
-    # -- row helpers ---------------------------------------------------------
+        # -- row helpers ---------------------------------------------------------
     def _to_dict(self, row: list) -> dict:
         d = {}
         for i, col in enumerate(self.columns):
@@ -85,7 +82,14 @@ class SheetRelation:
     def _find_index(self, rows: list[list], pk_value: Any) -> int | None:
         needle = _cell_encode(pk_value)
         for i, row in enumerate(rows):
-            if i < len(row) and _cell_encode(row[self._pk_idx]) == needle:
+            # Guard the PK COLUMN index, not the row index. The previous
+            # `i < len(row)` compared a row index against a column count, so the
+            # scan aborted once i reached the column count — on a 3-column tab
+            # only the first 3 rows were ever findable, and update()/delete()
+            # silently no-op'd on everything after. Production sheets hit this
+            # too: invoice_items has 8 columns, so only its first 8 rows were
+            # updatable.
+            if self._pk_idx < len(row) and _cell_encode(row[self._pk_idx]) == needle:
                 return i
         return None
 
@@ -120,20 +124,81 @@ class SheetRelation:
     def get(self, pk_value: Any) -> dict | None:
         return self.find_one(**{self.pk_col: pk_value})
 
+    def _invalidate(self, tab: str | None = None) -> None:
+        """Drop the storage read cache for this tab (no-op on local storage)."""
+        fn = getattr(self.store.sheets, "_invalidate", None)
+        if callable(fn):
+            fn(tab if tab is not None else self.tab)
+
+    def _fresh_rows(self) -> list[list]:
+        """Read the tab, bypassing (and invalidating) any cached copy."""
+        self._invalidate(self.tab)
+        return self._rows_with_header()
+
+    @staticmethod
+    def _pk_key(value) -> str:
+        """Normalise a pk for comparison (a sheet may return int or str)."""
+        return str(value).strip()
+
     def insert(self, record: dict) -> dict:
         """Append a record. Local PK + autoincrement if pk is empty and numeric."""
-        rec = dict(record)
-        if not rec.get(self.pk_col) and self.pk_col:
-            existing = [r.get(self.pk_col) for r in self.read_all()]
-            nums = [int(v) for v in existing if v is not None and str(v).isdigit()]
-            rec[self.pk_col] = (max(nums) + 1) if nums else 1
-        self.store.sheets.append_rows(self.tab, [self._to_row(rec)])
-        return rec
+        return self._insert_many([record])[0]
 
     def multi_insert(self, records: list[dict]) -> list[dict]:
-        return [self.insert(r) for r in records]
+        """Append many records in ONE append call; return them with assigned pks.
+
+        Never loops ``insert()``: one append per row is one network round trip
+        each, so an N-item request can time out server-side part way through and
+        silently persist only some of the rows. One call plus a verify-after-
+        write pass turns a partial write into a loud RuntimeError.
+        """
+        return self._insert_many(list(records))
+
+    def _insert_many(self, records: list[dict]) -> list[dict]:
+        """Shared insert path: one tab read, sequential pk allocation, one
+        append, then verify every assigned pk actually landed."""
+        recs = [dict(r) for r in records]
+        if not recs:
+            return []
+        if self.pk_col and any(not r.get(self.pk_col) for r in recs):
+            existing = [r.get(self.pk_col) for r in self.read_all()]
+            nums = [int(v) for v in existing if v is not None and str(v).isdigit()]
+            next_pk = (max(nums) + 1) if nums else 1
+            for rec in recs:
+                if not rec.get(self.pk_col):
+                    rec[self.pk_col] = next_pk
+                    next_pk += 1
+        self.store.sheets.append_rows(self.tab, [self._to_row(r) for r in recs])
+        self._invalidate(self.tab)
+        self._verify_pks_present([r[self.pk_col] for r in recs if self.pk_col in r])
+        return recs
+
+    def _verify_pks_present(self, pks) -> None:
+        """Verify-after-write: re-read the tab and confirm every pk landed.
+
+        Scans every returned row (including a header row, whose pk cell holds the
+        pk column name and so can never match a numeric pk) so this is correct
+        for both headered tabs and brand-new ones that have no header yet.
+        """
+        wanted = [self._pk_key(pk) for pk in pks]
+        if not wanted:
+            return
+        found = {self._pk_key(row[self._pk_idx])
+                 for row in self._fresh_rows() if len(row) > self._pk_idx}
+        missing = [pk for pk, key in zip(pks, wanted) if key not in found]
+        if missing:
+            raise RuntimeError(
+                f"sheetdb write verification failed on '{self.tab}': wrote "
+                f"{len(pks)} row(s) (pks {list(pks)}) but {len(pks) - len(missing)} "
+                f"confirmed present; missing pks {missing}")
 
     def update(self, pk_value: Any, changes: dict) -> dict | None:
+        """Update fields on the row with pk==pk_value; return updated row or None.
+
+        Writes only the changed cells via ``update_cell``. The previous
+        clear_tab + re-append-the-whole-tab rewrite could clobber unrelated rows
+        whenever the read it based itself on was stale.
+        """
         rows = self._rows_with_header()
         if not rows or not rows[0]:
             return None
@@ -141,30 +206,71 @@ class SheetRelation:
         idx = self._find_index(rows[1:], pk_value)
         if idx is None:
             return None
+        sheet_row = idx + 2  # header occupies sheet row 1
         row = list(rows[idx + 1])
         for col, val in changes.items():
             if col in header:
-                row[header.index(col)] = _cell_encode(val)
-        rows[idx + 1] = row
-        # rewrite body
-        self.store.sheets.clear_tab(self.tab)
-        self.store.sheets.append_rows(self.tab, rows)
+                c = header.index(col) + 1
+                self.store.sheets.update_cell(self.tab, sheet_row, c,
+                                              _cell_encode(val))
+                row[c - 1] = _cell_encode(val)
+        self._invalidate(self.tab)
+        fresh = self._rows_with_header()
+        if len(fresh) > idx + 1:
+            return self._to_dict(fresh[idx + 1])
         return self._to_dict(row)
 
     def delete(self, pk_value: Any) -> bool:
+        """Delete the row with pk==pk_value. True if deleted.
+
+        Uses the worksheet's targeted ``delete_rows`` rather than rewriting the
+        tab, and re-reads immediately before deleting so a stale index can never
+        take out a row other than the intended one.
+        """
         rows = self._rows_with_header()
         if not rows or not rows[0]:
             return False
         idx = self._find_index(rows[1:], pk_value)
         if idx is None:
             return False
-        del rows[idx + 1]
-        self.store.sheets.clear_tab(self.tab)
-        if len(rows) > 1:
-            self.store.sheets.append_rows(self.tab, rows)
-        else:
-            self.store.sheets.append_rows(self.tab, [rows[0]])
+        row_index = idx + 1  # 0-based; header occupies 0
+
+        # Guard: the tab can shift between the read above and the delete. Re-read
+        # fresh and refuse to delete unless this index still holds our pk.
+        fresh = self._fresh_rows()
+        if len(fresh) <= row_index or len(fresh[row_index]) <= self._pk_idx:
+            raise RuntimeError(
+                f"sheetdb delete aborted on '{self.tab}': row {row_index + 1} "
+                f"disappeared while deleting pk={pk_value!r}")
+        if not self._val_eq(fresh[row_index][self._pk_idx], pk_value):
+            raise RuntimeError(
+                f"sheetdb delete aborted on '{self.tab}': expected pk={pk_value!r} "
+                f"at row {row_index + 1} but found "
+                f"{fresh[row_index][self._pk_idx]!r}; refusing to delete another row")
+
+        self._delete_row(row_index)
+        self._invalidate(self.tab)
         return True
+
+    def _delete_row(self, row_index: int) -> None:
+            """Remove sheet row ``row_index`` (0-based, header at 0) in place.
+
+            Prefers the worksheet's targeted ``delete_rows`` so no other row in the
+            tab is touched. Backends whose worksheet cannot delete rows in place
+            (offline/local fakes) fall back to a header-preserving rewrite.
+            """
+            connect = getattr(self.store.sheets, "connect", None)
+            if callable(connect):
+                _, sh = connect()
+                ws = sh.worksheet(self.tab)
+                delete_rows = getattr(ws, "delete_rows", None)
+                if callable(delete_rows):
+                    delete_rows(row_index)
+                    return
+            rows = self._rows_with_header()
+            keep = rows[:row_index] + rows[row_index + 1:]
+            self.store.sheets.clear_tab(self.tab)
+            self.store.sheets.append_rows(self.tab, keep)
 
     # -- aggregation helpers (replaces common SQL) --------------------------
     def count(self, **equals) -> int:

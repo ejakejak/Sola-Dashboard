@@ -73,7 +73,8 @@ def _seed_categories(db_path):
 
 
 def _mkapp(db_path):
-    cfg = {"TESTING": True, "DATABASE_PATH": db_path, "SECRET_KEY": "test-secret"}
+    cfg = {"TESTING": True, "DATABASE_PATH": db_path, "SECRET_KEY": "test-secret",
+           "STORAGE": "sqlite"}
     app = create_app(cfg)
     create_schema(db_path)
     _seed_units(db_path)

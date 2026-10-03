@@ -49,3 +49,15 @@ roles 8 (ADMIN..CUSTOMER), permissions 15, role_permissions 31, users 8 (admin +
 
 ### Notes / invariants
 - Real `instance/sola.db` admin password **left untouched** (still the seeded default) by design — rotation is an explicit deploy-time step; the live app on :5000 was not interrupted (the parent's server was left running).
+## 2026-09-25 INTERMITTENT 500 AUDIT (by EVA)
+- Symptom: "always Internal Server Error" / either overloaded or app error.
+- Verdict: NOT a persistent code break. Live probes on solakonveksi.vercel.app returned 200 on all routes incl /production/templates (12x burst stable). 500s are TRANSIENT = Google Sheets API errors (HTTP 429 quota / 5xx) surfacing as raw 500.
+- Root cause: commit 1e4c28a added a graceful `errorhandler(Exception)` ONLY to the commercial blueprint (quotations/orders/invoices → friendly flash+redirect). production.py (0), dashboard.py (0), masterdata.py (0), inventory.py (0), track.py (0) have NO error handler → transient Sheets failures on those routes raise the default Web 500.
+- trigger: `_read_cached` → `_worksheet` → `connect`/gspread `get_all_values` throws on quota/5xx; `_retry` re-raises on final attempt; no blueprint handler → raw 500.
+- Fix (recommended): register the same graceful Exception handler on the remaining 5 blueprints (or a single app-wide handler with a small temporary-error page instead of raw 500). [PENDING — needs REX + deploy]
+
+## 2026-09-25 FIX DEPLOYED + VERIFIED (by EVA)
+- Fix commit 1ef8b5a on deployment/vercel: app-wide transient handler (app/errors.py, wired in app/__init__.py; reuses storage._transient). Covers production/dashboard/masterdata/inventory/track. Transient -> friendly flash+302; non-transient -> real 500.
+- 3/3 tests pass; 48-route boot smoke clean.
+- Vercel auto-deploy on push to deployment/vercel confirmed (production deploy sola-dashboard-mp6zoh8p6 carries 1ef8b5a). Re-pointed live alias solakonveksi.vercel.app to it.
+- Live verified (admin/sola123 after redeploy): / /production/templates /inventory /master-data/ /quotations/ /production all 200.
