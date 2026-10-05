@@ -627,7 +627,7 @@ class SheetsStorage(Storage):
     # fetches) and cache per-tab value grids with a short TTL; invalidate on any
     # write. Without this, a single page (auth + dashboard = ~10 tab reads)
     # slams the quota and returns HTTP 429.
-    _READ_TTL = 10.0  # seconds; values are re-fetched at most once per TTL per tab
+    _READ_TTL = 300.0  # seconds; 5 min cache reduces first-load freeze after idle
 
     def _worksheet(self, tab: str):
         """Return a cached gspread Worksheet object (no metadata re-fetch)."""
