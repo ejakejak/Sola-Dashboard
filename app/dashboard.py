@@ -66,7 +66,23 @@ _COLS = {
 
 
 def _define(rel, name):
-    return rel.define(name, _COLS[name], pk=_COLS[name][0])
+    relation = rel.define(name, _COLS[name], pk=_COLS[name][0])
+    _orig = relation.read_all
+    def _cached_read_all():
+        try:
+            cache = getattr(g, "_dash_read_cache", None)
+            if cache is None:
+                cache = {}
+                g._dash_read_cache = cache
+            key = name
+            if key not in cache:
+                cache[key] = _orig()
+            return cache[key]
+        except Exception:
+            # Fallback if g is unavailable (outside request context)
+            return _orig()
+    relation.read_all = _cached_read_all
+    return relation
 
 
 BOARD_STAGES = [
@@ -104,30 +120,35 @@ def compute_kpis():
     productions = _define(rel, "production_orders")
     invoices = _define(rel, "invoices")
 
+    # Read once per tab (avoid 7 full-table reads for 3 tabs)
+    orders_all = orders.read_all()
+    productions_all = productions.read_all()
+    invoices_all = invoices.read_all()
+
     active_orders = sum(
-        1 for o in orders.read_all() if o.get("status") not in _ACTIVE_STATUSES
+        1 for o in orders_all if o.get("status") not in _ACTIVE_STATUSES
     )
     in_production = sum(
-        1 for p in productions.read_all()
+        1 for p in productions_all
         if p.get("status") not in _ACTIVE_STATUSES
     )
     open_invoices = [
-        inv for inv in invoices.read_all() if _to_num(inv.get("outstanding")) > 0
+        inv for inv in invoices_all if _to_num(inv.get("outstanding")) > 0
     ]
     waiting_payment = len(open_invoices)
     ready_to_ship = sum(
-        1 for p in productions.read_all()
+        1 for p in productions_all
         if (p.get("status") == "completed" or p.get("current_stage") == "COMPLETED")
         and p.get("status") != "cancelled"
     )
     today = date.today().isoformat()
     overdue = 0
-    for p in productions.read_all():
+    for p in productions_all:
         dl = p.get("deadline")
         if (dl is not None and str(dl) < today
                 and p.get("status") not in _ACTIVE_STATUSES):
             overdue += 1
-    outstanding_sum = invoices.sum_column("outstanding")
+    outstanding_sum = sum(_to_num(inv.get("outstanding")) for inv in invoices_all)
     kpis = [
         {"key": "active_orders", "label": "Active Orders", "value": active_orders,
          "token": "info", "link": "/orders", "sub": "not completed / cancelled"},
@@ -206,21 +227,48 @@ def compute_unpaid_invoices():
 def compute_recent_updates(limit=8):
     rel = _rel()
     updates = _define(rel, "production_updates")
+
+    # Read only updates first; avoid full productions/users/stages reads
+    # when only 8 recent items are shown.
+    all_updates = updates.read_all()
+    all_updates.sort(key=lambda r: _to_num(r.get("update_id")), reverse=True)
+    top = all_updates[:limit]
+
+    if not top:
+        return []
+
+    # Lazy-fetch only needed related records
+    needed_pid = {str(u.get("production_id")) for u in top if u.get("production_id") is not None}
+    needed_uid = {str(u.get("user_id")) for u in top if u.get("user_id") is not None}
+    needed_sid = {str(u.get("production_stage_id")) for u in top if u.get("production_stage_id") is not None}
+
     productions = _define(rel, "production_orders")
     users = _define(rel, "users")
     stages = _define(rel, "production_stages")
 
-    prod_by_id = {str(p.get("production_id")): p for p in productions.read_all()}
-    user_by_id = {str(u.get("user_id")): u for u in users.read_all()}
-    stage_by_id = {str(s.get("production_stage_id")): s for s in stages.read_all()}
+    prod_by_id = {}
+    if needed_pid:
+        for p in productions.read_all():
+            pid = str(p.get("production_id"))
+            if pid in needed_pid:
+                prod_by_id[pid] = p
 
-    all_updates = sorted(
-        updates.read_all(),
-        key=lambda r: _to_num(r.get("update_id")),
-        reverse=True,
-    )
+    user_by_id = {}
+    if needed_uid:
+        for u in users.read_all():
+            uid = str(u.get("user_id"))
+            if uid in needed_uid:
+                user_by_id[uid] = u
+
+    stage_by_id = {}
+    if needed_sid:
+        for s in stages.read_all():
+            sid = str(s.get("production_stage_id"))
+            if sid in needed_sid:
+                stage_by_id[sid] = s
+
     rows = []
-    for u in all_updates[:limit]:
+    for u in top:
         pid = u.get("production_id")
         prod = prod_by_id.get(str(pid)) if pid is not None else None
         uid = u.get("user_id")
