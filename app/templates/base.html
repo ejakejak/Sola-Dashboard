@@ -14,29 +14,8 @@
       <span>SOLA Dash</span>
     </div>
     <nav>
-      <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint=='index' }}">Dashboard</a>
-      {% if can('quotation.view') %}
-      <a href="{{ url_for('quotations.list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('quotations') }}">Quotations</a>
-      {% endif %}
-      {% if can('order.view') %}
-      <a href="{{ url_for('orders.list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('orders') }}">Orders</a>
-      {% endif %}
-      {% if can('invoice.view') %}
-      <a href="{{ url_for('invoices.list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('invoices') }}">Invoices</a>
-      {% endif %}
-      {% if can('production.view') %}
-      <a href="{{ url_for('production.list_productions') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('production') and request.endpoint != 'production.template_list' and request.endpoint != 'production.template_new' and request.endpoint != 'production.template_edit' }}">Production</a>
-      <a href="{{ url_for('production.board') }}" class="{{ 'active' if request.endpoint == 'production.board' }}">Board</a>
-      {% endif %}
-      {% if can('workflow.manage') %}
-      <a href="{{ url_for('production.template_list') }}" class="{{ 'active' if request.endpoint and request.endpoint in ('production.template_list','production.template_new','production.template_edit') }}">Workflow Templates</a>
-      {% endif %}
-      {% if can('masterdata.view') %}
-      <a href="{{ url_for('master.index') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('master') }}">Master Data</a>
-      {% endif %}
-      {% if can('inventory.view') %}
-      <a href="{{ url_for('inventory.list_inventory') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('inventory') }}">Inventory</a>
-      {% endif %}
+      <a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint=='index' }}">Invoices</a>
+      <a href="{{ url_for('invoices.list') }}" class="{{ 'active' if request.endpoint and request.endpoint.startswith('invoices') }}">All Invoices</a>
     </nav>
     <div class="sec-label">Later phases</div>
     <nav>

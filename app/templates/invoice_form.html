@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block crumb %}Invoices · New{% endblock %}
+{% block title %}New Invoice · SOLA{% endblock %}
+{% block content %}
+<div class="page-head"><h1>New Invoice</h1></div>
+<div class="card form-card"><div class="card-b">
+<form method="post">
+  <h2>1 · Customer & terms</h2>
+  <div class="form-grid">
+    <div class="form-row"><label>Customer</label>
+      <select name="customer_id" required>
+        <option value=""></option>
+        {% for c in customers %}<option value="{{ c.customer_id }}">{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-row"><label>Subtotal (Rp)</label><input type="number" step="any" min="0" name="subtotal" value="0" required></div>
+    <div class="form-row"><label>Discount (Rp)</label><input type="number" step="any" min="0" name="discount" value="0"></div>
+    <div class="form-row"><label>Tax rate (%)</label><input type="number" step="any" min="0" name="tax_rate" value="0"></div>
+  </div>
+  <h2>2 · Line items</h2>
+  <table class="data"><thead><tr><th>Description</th><th>Qty</th><th>Unit price</th></tr></thead>
+  <tbody>
+    <tr><td><input type="text" name="item_description[]" placeholder="Description"></td>
+        <td><input type="number" name="item_qty[]" value="1" min="1"></td>
+        <td><input type="number" name="item_price[]" value="0" min="0"></td></tr>
+  </tbody></table>
+  <div style="margin-top:12px"><button type="submit" class="btn">Create Invoice</button></div>
+</form>
+</div></div>
+{% endblock %}

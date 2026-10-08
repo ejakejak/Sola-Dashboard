@@ -33,10 +33,12 @@ def _transient(exc: Exception) -> bool:
     carrying an HTTP 429 (rate-limit) or 5xx status. Everything else — not-found,
     auth failures, logic errors — is left to surface immediately.
     """
-    import requests
-
-    if isinstance(exc, (requests.exceptions.RequestException, TimeoutError, ConnectionError)):
-        return True
+    try:
+        import requests
+        if isinstance(exc, (requests.exceptions.RequestException, TimeoutError, ConnectionError)):
+            return True
+    except Exception:
+        pass
     try:
         from gspread.exceptions import APIError
     except Exception:  # pragma: no cover - gspread always present on the sheets path
